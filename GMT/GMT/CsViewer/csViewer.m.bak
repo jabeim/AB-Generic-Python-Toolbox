@@ -1,0 +1,187 @@
+function [hFig graph] = csViewer(CS, hFig)
+    
+    persistent CS_listener;
+    persistent graphComponent;
+    persistent javaComponent;
+  
+    if nargin < 2 || isempty(hFig) || ~ishandle(hFig)
+        hFig = figure('units','pixels','Toolbar','none');
+        newFigure = 1;
+        graphComponent = [];
+        
+        hMenu = [];
+        hMenu(end+1) = findall(gcf,'type','uimenu', 'tag', 'figMenuFile');
+        hMenu(end+1) = findall(gcf,'type','uimenu', 'tag', 'figMenuEdit');
+        hMenu(end+1) = findall(gcf,'type','uimenu', 'tag', 'figMenuWindow');
+        hMenuUnwanted = setdiff(findall(gcf,'type','uimenu','parent', hFig), hMenu);
+        delete(hMenuUnwanted);
+        
+    else
+        newFigure = 0;
+    end
+          
+    % Drawing parameters:
+    %   proc units
+    par.PU_varY = [-66 -33 33 66 33 -33] * 0.8;
+    par.PU_varX = 0;
+    par.PU_h = 75;
+    par.PU_w = 55;
+    par.PU_yOffs = 0;
+    par.PU_xOffs = 85;
+    par.PU_style = 'fillColor=#FFFFFF;strokeColor=#000000';
+    %   data units
+    par.DU_h = 14;
+    par.DU_w = 12;
+    par.DU_yOffs = 18;
+    par.DU_xOffs = 0;
+    par.DU_yAnchIn = 5;
+    par.DU_xAnchIn = -5 ;
+    par.DU_yAnchOut = 5;
+    par.DU_xAnchOut = par.PU_w - 5 ;
+
+    par.DU_styleOut  = 'fillColor=#FFAAAA;strokeColor=#AA0000;verticalAlign=top;verticalLabelPosition=middle';
+    par.DU_styleIn   = 'fillColor=#AAAAFF;strokeColor=#0000AA;verticalAlign=top;verticalLabelPosition=middle';
+    par.edgeStyle = 'edgeStyle=elbowEdgeStyle;orthogonal=1;elbow=horizontal';
+
+    graph = GmtMxGraphFactory.create();
+    
+    % Get the parent cell
+    parent = graph.getDefaultParent();
+    
+    nPU = length(CS.procUnits);
+        
+    vPU = {};
+    xNew =  (-par.PU_xOffs + par.PU_w/2);
+    yNew =  (-par.PU_yOffs + par.PU_h/2);
+    
+    % Group update
+    graph.getModel().beginUpdate();
+    
+    for iPU = 1:nPU
+        PU = CS.procUnits{iPU};
+
+        xNew = xNew + par.PU_xOffs + par.PU_varX(mod(iPU,length(par.PU_varX))+1);
+        yNew = yNew + par.PU_yOffs + par.PU_varY(mod(iPU,length(par.PU_varY))+1);
+        % add PU box
+        v{iPU}.PU = graph.insertVertex(parent, PU.ID, PU.ID, xNew, yNew, par.PU_w, par.PU_h, par.PU_style);
+        
+        nDUin = PU.inputCount;
+        nDUout = PU.outputCount;
+        
+        v{iPU}.DuIn = cell(1,nDUin);
+        v{iPU}.DuOut = cell(1,nDUout);
+        
+        xDuNext = par.DU_xAnchIn + xNew;
+        yDuNext = par.DU_yAnchIn + yNew;
+        
+        % add input DUs
+        for iDU = 1:nDUin
+            DU = PU.getDataUnit(sprintf('INPUT_%d',iDU));
+            %v{iPU}.DuIn{iDU} = graph.insertVertex(v{iPU}.PU, DU.ID, sprintf('%d',iDU), xDuNext, yDuNext, par.DU_w, par.DU_h, par.DU_styleIn);
+            v{iPU}.DuIn{iDU} = graph.insertVertex(parent, DU.ID, sprintf('%d',iDU), xDuNext, yDuNext, par.DU_w, par.DU_h, par.DU_styleIn);
+            xDuNext = xDuNext + par.DU_xOffs;
+            yDuNext = yDuNext + par.DU_yOffs;
+        end
+        
+        xDuNext = par.DU_xAnchOut + xNew;
+        yDuNext = par.DU_yAnchOut + yNew;
+        % add output DUs
+        for iDU = 1:nDUout
+            DU = PU.getDataUnit(sprintf('OUTPUT_%d',iDU));
+            %v{iPU}.DuOut{iDU} = graph.insertVertex(v{iPU}.PU, DU.ID, sprintf('%d',iDU), xDuNext, yDuNext, par.DU_w, par.DU_h, par.DU_styleOut);
+            v{iPU}.DuOut{iDU} = graph.insertVertex(parent, DU.ID, sprintf('%d',iDU), xDuNext, yDuNext, par.DU_w, par.DU_h, par.DU_styleOut);
+            xDuNext = xDuNext + par.DU_xOffs;
+            yDuNext = yDuNext + par.DU_yOffs;
+
+        end
+        %disp(graph.getCellStyle(v{iPU}.PU));
+    end
+    
+    % add connections
+    for iPU = 1:nPU
+        srcPU = CS.procUnits{iPU};
+        for iDU = 1:length(v{iPU}.DuOut);
+            
+            srcVert = v{iPU}.DuOut{iDU};
+            srcDU = CS.procUnits{iPU}.getDataUnit(sprintf('OUTPUT_%d',iDU));
+            nCon = length(srcDU.connection);
+           
+            
+            for iCon = 1:nCon
+                % destPU = (mxCell)((mxGraphModel)graph.getModel()).getCell(myId);
+                [destPU iDestPU] = CS.locateProcUnitByID(srcDU.connection(iCon).procUnit.ID);
+                iDestDU = sscanf(srcDU.connection(iCon).inputID,'%*[^_]_%f');
+                destDU = destPU.getDataUnit(srcDU.connection(iCon).inputID);
+                destVert = v{iDestPU}.DuIn{iDestDU};
+                
+                E = graph.insertEdge(srcVert, '', '', srcVert, destVert, par.edgeStyle);                
+
+                srcVert.setId(sprintf('-> %s:%s',destPU.ID,destDU.ID));
+                destVert.setId(sprintf('<- %s:%s',srcPU.ID,srcDU.ID));
+                E.setId(sprintf('%s:%s -> %s:%s',srcPU.ID,srcDU.ID,destPU.ID,destDU.ID))
+                
+            end
+        end
+    end
+
+    graph.getModel().endUpdate();  
+    graph.setCellsLocked(1);    
+
+    if ~isempty(graphComponent)
+        vertScrollPos = graphComponent.getVerticalScrollBar.getValue();
+        horizScrollPos = graphComponent.getHorizontalScrollBar.getValue();
+    else
+        vertScrollPos = 0;
+        horizScrollPos = 0;
+    end
+    
+    % Get scrollpane
+    graphComponent = com.mxgraph.swing.mxGraphComponent(graph);
+    graphComponent.setToolTips(1);
+    graphComponent.setConnectable(0);
+  
+    % determine figure size (auto if new, same as before otherwise)
+    if newFigure
+        screenSize = get(0,'ScreenSize');
+        graphSize = [0, 0, graphComponent.getPreferredSize().width,graphComponent.getPreferredSize().height];        
+        pos = min(screenSize, graphSize + [0 0 par.PU_w/4 par.PU_h/4]);
+        pos(1:2) = round(screenSize(3:4)/2 - pos(3:4)/2);        
+        set(hFig,'Position',pos);
+    else
+        pos = get(hFig,'position');
+    end
+    
+    % create JPanel that holds the graph
+    graphPanel = javax.swing.JPanel(java.awt.BorderLayout);
+    graphPanel.add(graphComponent);    
+        
+    % Create new matlab container hold graphPanel...
+    if newFigure
+        [javaComponent, hcontainer] = javacomponent(graphPanel, [0,0,pos(3:4)], hFig);
+        set(hFig,'ResizeFcn',{@csViewer_resizeFcn, hcontainer});
+        % maintain only one "active" view in case of multiple calls to csViewer
+        if (~isempty(CS_listener))
+           delete(CS_listener);
+        end
+        % register GraphChanged-listener in CS:
+        CS_listener = addlistener(CS, 'GraphChanged', @(src, data) csViewer(CS, hFig));
+        % ensure removal of listener when figure is closed
+        set(hFig,'DeleteFcn',@(src, event) delete(CS_listener));
+    
+    else % or replace old graphPanel inside existing container
+        javaComponent.removeAll();
+        javaComponent.add(graphPanel);
+        javaComponent.updateUI();
+    end
+    
+    % set scroll positions as before
+    graphComponent.getVerticalScrollBar.setValue(vertScrollPos);
+    graphComponent.getHorizontalScrollBar.setValue(horizScrollPos);
+    
+    %set(hFig,'UserData',CS);
+    
+    %if (~isempty(CS_listener))
+    %    delete(CS_listener);
+    %end
+    
+end
