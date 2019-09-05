@@ -71,11 +71,11 @@ def dualLoopTdAgcFunc(par,wavIn,*args):
     else: # control signal is provided, use the specified control mode option
         assert isinstance(args[0],np.ndarray),'ctrl must be a numpy array!'
         ctrl = args[0];
-        nSamp = min([len(wavIn), len(ctrl)]);
+        nSamp = np.min([wavIn.size, ctrl.size]);
         wavIn = wavIn[0:nSamp-1]
         if par['controlMode'].lower()  == 'naida':
             ctrl = ctrl[0:nSamp-1];
-            ctrl = 0.75*np.maximum(abs(wavIn),abs(ctrl))
+            ctrl = 0.75*np.maximum(np.abs(wavIn),np.abs(ctrl))
         elif par['controlMode'].lower() == 'direct':
             ctrl = ctrl[0:nSamp-1]
         else: 
@@ -100,7 +100,7 @@ def dualLoopTdAgcFunc(par,wavIn,*args):
     bAttFast = np.exp(-decFact/fs*1000/par['tauAttFast'])
     bRelFast = np.exp(-decFact/fs*1000/par['tauRelFast'])
     
-    nSamp = len(ctrl)
+    nSamp = ctrl.size
     nFrame = np.ceil(nSamp/decFact);
     
     # preallocation 
@@ -124,11 +124,11 @@ def dualLoopTdAgcFunc(par,wavIn,*args):
     
     # loop over blocks
     for iFrame in np.arange(1,nFrame):
-        idxWav = iFrame*decFact+np.arange(-(envBufLen-1),0)-1;
+        idxWav = iFrame*decFact+np.arange(-(envBufLen-1),1)-1;
         idxWav = idxWav[idxWav>0];
         idxWav = idxWav[idxWav <=nSamp];
         # compute envelope
-        env_i = np.sum(np.abs(ctrl[idxWav])*envCoefs[-len(idxWav)+1:]);
+        env_i = np.sum(np.abs(ctrl[idxWav])*envCoefs[-idxWav.size+1:]);
         envFast_i = clip1(env_i*fastHdrm);
         # update envelope averagers
         if env_i > cSlow_i:
@@ -191,6 +191,8 @@ def dualLoopTdAgcFunc(par,wavIn,*args):
         warn('Unknown clipping mode: '+par['clipMode']+' . Using ''none'' instead.')
         
     return(wavOut,GExpand,State,C,CSlow,CFast,Hold,Env,G,EnvFast)
+    
+    
 def track(C_prev,In,weightPrev):
     weightIn = 1-weightPrev
     C_out = In*weightIn+C_prev*weightPrev;

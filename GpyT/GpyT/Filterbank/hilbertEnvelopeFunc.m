@@ -3,16 +3,16 @@ function [env, envNoLog] = hilbertEnvelopeFunc(par, X)
 % INPUT
 %   - par: parameter object/struct
 %   - X : short-time fft coefficient matrix, nFreq x nFrames
-%
+% 
 % FIELDS FOR PAR:
 %   - outputOffset : scalar offset added to all channel outputs [log2]
 %   - parent.nChan : number of analysis channels
 %   - parent.startBin  : lowest fft-bin of the lowest analysis channel 
 %   - parent.nBinLims  : number of FFT bins per analysis channel
-%
+% 
 % OUTPUT:
 %   - env : hilbert envelopes, one row per channel
-
+% 
 % Change log:
 % 2012, MM - created
 % 24/11/2014, PH - removed mandatory "scale" argument
