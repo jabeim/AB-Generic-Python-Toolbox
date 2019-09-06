@@ -27,4 +27,29 @@ def channEnergyFunc(par,X,gAgc):
             gAgc = gAgc[0:nFrames];
         elif lenAgcIn > 0 and lenAgcIn < nFrames:
             raise ValueError('Length of gAgc input incompatible with number of frames in STFT matrix: length must be >= nr. frames.')
-            
+        
+    # compute roo-sum-squared FFT magnitudes per channel
+    engy = np.zeros((nChan,nFrames))
+    currentBin = startBin;
+    for iChan in np.arange(nChan):
+        currBinIdx = np.arange(currentBin,currentBin+nBinLims[iChan])
+        engy[iChan,:] = np.sum(np.abs(X[currBinIdx,:])**2,axis=0)
+        currentBin +=nBinLims[iChan]
+        
+    engy = np.sqrt(engy)
+    
+    # compensate AGC gain, if applicable
+    if lenAgcIn > 0:
+        if par['gainDomain'].lower() == 'linear' or par['gainDomain'].lower() == 'lin':
+            pass
+        elif par['gainDomain'].lower() == 'log' or par['gainDomain'].lower() == 'log2':
+            gAgc = 2**(gAgc/2);
+        elif par['gainDomain'].lower() == 'db':
+            gAgc = 10**(gAgc/20);
+        else:
+            raise ValueError('Illegal value for parameter ''gainDomain''')
+        gAgc = np.maximum(gAgc,np.finfo(float).eps)
+        engy = np.divide(engy,gAgc)
+        
+    return engy
+        

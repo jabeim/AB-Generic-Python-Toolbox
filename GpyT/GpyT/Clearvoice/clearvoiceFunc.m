@@ -1,21 +1,21 @@
 % [G_out, A_out, Vn, Vs, Hold] = clearvoiceFunc(par, A)
-%
+% 
 % Compute channel-by-channel gains as in ClearVoice. The gain function is 
 % implemented following specification D000001063 (L.Litvak, 2009), with 
 % added freedom in choosing the shape parameters. Note that AGC gain input
 % is expected at audio sample rate (firmware uses decimated gain).
-%
+% 
 % INPUT:
 %   par - parameter object / struct
 %   A - nCh x nFrames matrix of channel amplitudes (sqrt(power), linearly scaled)
-%
+% 
 % OUTPUT:
 %   G_out - nCh x nFrames matrix of ClearVoice gains (domain determined by par.gainDomain)
 %   A_out - nCh x nFrames matrix of channel amplitudes (sqrt(power), linearly scaled)
 %   Vn   - nCh x nFrames matrix of noise estimates
 %   Vs   - nCh x nFrames matrix of speech estimates
 %   Hold - nCh x nFrames matrix of hold states
-%
+% 
 % FIELDS FOR PAR:
 %   parent.fs   - audio sample rate [int > 0]
 %   parent.nHop - FFT hop size [int > 0]
@@ -31,7 +31,7 @@
 %   slopeFact  - factor determining the steepness of the gain curve [> 0]
 %   noiseEstDecimation - down-sampling factor (re. frame rate) for noise estimate [int > 0]
 %   enableContinuous - save final state for next execution? [boolean]
-
+% 
 % Change log:
 %   30 Jan 2012, P.Hehrmann - created
 %   18 Jun 2013, S.Fredelake - added additional outputs V_nOut, V_sOut

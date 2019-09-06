@@ -14,6 +14,6 @@ def tdFilterFunc(par,x):
     for iCh in np.arange(0,nCh):
         Y[iCh,:] = lfilter(par['coeffNum'][iCh,:],par['coeffDenom'][iCh,:],x)
         
-    return(Y)
+    return Y
     
     

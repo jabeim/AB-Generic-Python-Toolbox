@@ -24,7 +24,7 @@ def readWavFunc(par):
         
     if srcFs != stratFs:
         signalIn = resample(signalIn,stratFs,srcFs)
-    return(signalIn)
+    return signalIn
     
         
     

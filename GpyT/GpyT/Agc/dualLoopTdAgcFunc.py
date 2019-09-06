@@ -190,14 +190,14 @@ def dualLoopTdAgcFunc(par,wavIn,*args):
     else:
         warn('Unknown clipping mode: '+par['clipMode']+' . Using ''none'' instead.')
         
-    return(wavOut,GExpand,State,C,CSlow,CFast,Hold,Env,G,EnvFast)
+    return wavOut,GExpand,State,C,CSlow,CFast,Hold,Env,G,EnvFast
     
     
 def track(C_prev,In,weightPrev):
     weightIn = 1-weightPrev
     C_out = In*weightIn+C_prev*weightPrev;
-    return(C_out)
+    return C_out
     
 def clip1(In):
     out = np.max([-1,np.min([1,In])])
-    return(out)
+    return out
