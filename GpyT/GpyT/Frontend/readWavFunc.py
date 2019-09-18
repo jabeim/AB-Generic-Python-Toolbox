@@ -10,14 +10,19 @@ from nnresample import resample
 
 
 def readWavFunc(par):
-    name = par['WavFile']
+    name = par['wavFile']
     stratFs = par['parent']['fs']
     
-    srcFs,signalIn = wavread(name);
+    [srcFs,signalIn] = wavread(name);
     
-    signalIn = signalIn[:,par['iChannel']]
+    if len(signalIn.shape) > 1:
+        signalIn = signalIn[:,par['iChannel']-1]
+    else:
+        signalIn = signalIn
     
-    if par['tStartEnd'].size() > 0:
+    
+    
+    if len(par['tStartEnd']) > 0:
         iStartEnd = np.round(par['tStartEnd']*srcFs+np.array([1,0]));
         signalIn = signalIn[iStartEnd[0]:iStartEnd[1]];
         

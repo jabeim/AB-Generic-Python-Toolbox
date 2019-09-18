@@ -10,11 +10,12 @@ def specPeakLocatorFunc(par,stftIn):
     strat = par['parent']
     nFft = strat['nFft']
     fs = strat['fs']
+    nChan = strat['nChan']
     nBinLims = strat['nBinLims']
     binToLoc = par['binToLocMap']
     startBin = strat['startBin']
     
-    fftBinWidth = fs/nfft
+    fftBinWidth = fs/nFft
     
     nBins,nFrames = stftIn.shape
     
@@ -35,4 +36,22 @@ def specPeakLocatorFunc(par,stftIn):
         
     for i in np.arange(nChan):
         ind_m = np.ravel_multi_index(np.array([maxBin[i,:],np.arange(nFrames)]),PSD.shape)
-    
+        midVal = np.log2(PSD[ind_m])
+        leftVal = np.log2(PSD[ind_m-1])
+        rightVal = np.log2(PSD[ind_m+1])
+        
+        maxLeftRight = np.max(np.array([leftVal,rightVal]))
+        midIsMax = midVal > maxLeftRight
+        
+        binCorrection[midIsMax] = 0.5 * (rightVal[midIsMax]-leftVal[midIsMax])/(2*midVal[midIsMax]-leftVal[midIsMax]-rightVal[midIsMax])
+        
+        binCorrection[~midIsMax] = 0.5*(rightVal[~midIsMax]==maxLeftRight[~midIsMax])-.5*(leftVal[~midIsMax]==maxLeftRight[~midIsMax])
+        
+        freqInterp[i,:] = fftBinWidth * (maxBin[i,:]+binCorrection-1)
+        deltaLocIdx = maxBin[i,:] + np.sign(binCorrection)
+        loc[i,:] = binToLoc[maxBin[i,:]]+binCorrection*np.abs(binToLoc[maxBin[i,:]]-binToLoc[deltaLocIdx])
+        
+    return freqInterp, loc 
+        
+        
+        

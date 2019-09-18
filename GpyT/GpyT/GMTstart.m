@@ -33,3 +33,4 @@ addpath([GMTROOT, filesep, 'Strategies'])
 addpath([GMTROOT, filesep, 'Synthesis']);
 addpath([GMTROOT, filesep, 'Vocoder']);
 addpath([GMTROOT, filesep, 'WinBuf']);
+addpath([GMTROOT, filesep, 'Sounds']);

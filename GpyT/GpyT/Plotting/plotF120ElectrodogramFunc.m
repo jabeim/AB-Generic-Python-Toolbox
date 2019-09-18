@@ -115,9 +115,9 @@ hLines = NaN(1,nElec);
 for iEl = 1:nElec   
     xx = repmat(tPulse{iEl}, 3, 1);
     yy = [iEl+zeros(size(ampPulse{iEl})); iEl+ampPulse{iEl}; NaN(size(ampPulse{iEl}))];
-    
     hLines(iEl) = plot( [xx(:); stimDur; 0], [yy(:); iEl; iEl], 'Color', par.pulseColor);
 end
+
 
 % return handles
 handles.hFig = hFig;

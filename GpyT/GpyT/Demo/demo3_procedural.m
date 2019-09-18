@@ -169,6 +169,8 @@ par_plotter = struct(...
 % ( strat.connect(block_1, block_2), ..., strat.run() ) 
 
 sig_smp_wavIn                           = readWavFunc(par_readWav); % read wav input
+
+return
 sig_smp_wavScaled = sig_smp_wavIn / sqrt(mean(sig_smp_wavIn.^2)) * 10^((65 - 111.6) / 20);   % 65 dB SPL RMS  (assuming 111.6 dB full-scale)
 
 sig_smp_wavPre                          = tdFilterFunc(par_pre, sig_smp_wavScaled); % pre-emphasis
