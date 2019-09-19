@@ -6,7 +6,7 @@ Created on Thu Sep  5 16:24:58 2019
 """
 import numpy as np
 
-def channEnergyFunc(par,X,gAgc):
+def channelEnergyFunc(par,X,gAgc):
     strat = par['parent'];
     startBin = strat['startBin']
     nBinLims = strat['nBinLims'];

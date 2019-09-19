@@ -15,6 +15,7 @@ def readWavFunc(par):
     
     [srcFs,signalIn] = wavread(name);
     
+        
     if len(signalIn.shape) > 1:
         signalIn = signalIn[:,par['iChannel']-1]
     else:
@@ -28,7 +29,14 @@ def readWavFunc(par):
         
         
     if srcFs != stratFs:
-        signalIn = resample(signalIn,stratFs,srcFs)
+        if len(signalIn.shape) > 1:
+            for iCh in np.arange(signalIn.shape[0]):
+                resampledSig[iCh,:] = resample(signalIn[iCh,:],stratFs,srcFs)
+        else:
+            signalIn = np.squeeze(resample(signalIn,stratFs,srcFs))
+            
+        
+    print(signalIn.shape)
     return signalIn
     
         

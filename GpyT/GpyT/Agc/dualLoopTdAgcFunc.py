@@ -65,7 +65,7 @@ def dualLoopTdAgcFunc(par,wavIn,*args):
     
     #check input dimensions
     assert isinstance(wavIn,np.ndarray),'wavIn must be a numpy array!'
-    
+    print (wavIn.shape)
     if len(args) == 0: # no explicit control provided, use audio
         ctrl = wavIn;
     else: # control signal is provided, use the specified control mode option
@@ -93,6 +93,8 @@ def dualLoopTdAgcFunc(par,wavIn,*args):
     gainSlope = 1/par['compRatio']-1
     fastHdrm = 10**(-par['fastThreshRel']/20)
     envCoefs = par['envCoefs']
+    
+    
         
     # averaging weights
     bAttSlow = np.exp(-decFact/fs*1000/par['tauAttSlow'])
@@ -101,7 +103,8 @@ def dualLoopTdAgcFunc(par,wavIn,*args):
     bRelFast = np.exp(-decFact/fs*1000/par['tauRelFast'])
     
     nSamp = ctrl.size
-    nFrame = np.ceil(nSamp/decFact);
+   
+    nFrame = np.ceil(nSamp/decFact).astype(int);
     
     # preallocation 
     Env = np.empty(nFrame);
@@ -124,11 +127,14 @@ def dualLoopTdAgcFunc(par,wavIn,*args):
     
     # loop over blocks
     for iFrame in np.arange(1,nFrame):
-        idxWav = iFrame*decFact+np.arange(-(envBufLen-1),1)-1;
-        idxWav = idxWav[idxWav>0];
+        idxWav = iFrame+1*decFact+np.arange(-(envBufLen-1),0)-1;
+        idxWav = idxWav[idxWav>=0];
         idxWav = idxWav[idxWav <=nSamp];
+        
+#        print(idxWav.shape)
+#        print(ctrl.shape)
         # compute envelope
-        env_i = np.sum(np.abs(ctrl[idxWav])*envCoefs[-idxWav.size+1:]);
+        env_i = np.sum(np.abs(ctrl[idxWav])*envCoefs[-idxWav.size:]);
         envFast_i = clip1(env_i*fastHdrm);
         # update envelope averagers
         if env_i > cSlow_i:
@@ -142,7 +148,7 @@ def dualLoopTdAgcFunc(par,wavIn,*args):
                 cFastLowLimit_i = cSlow_i*10**(-10/20);
                 cFast_i = track(cFast_i,envFast_i,bRelFast);
                 state_i = 2;
-            cSlow_i = track(cSlow_i,np.min(env_i,fastThr_i),bAttSlow)
+            cSlow_i = track(cSlow_i,min((env_i,fastThr_i)),bAttSlow)
         elif hold_i == 0:
             deltaHold = 0;
             cFastLowLimit_i = cSlow_i*10**(-10/20)
@@ -155,15 +161,15 @@ def dualLoopTdAgcFunc(par,wavIn,*args):
             cFast_i = track(cFast_i,envFast_i,bRelFast);
             state_i = 1;
             
-        hold_i = np.min((hold_i+deltaHold,maxHold))
-                
-        cSlow_i = np.max(cSlow_i,c0);
-        cFast_i = np.max(cFast_i,cFastLowLimit_i)
+        hold_i = min((hold_i+deltaHold,maxHold))
         
-        c_i = np.max(cFast_i,cSlow_i);
+        cSlow_i = max((cSlow_i,c0));
+        cFast_i = max((cFast_i,cFastLowLimit_i))
         
-        c_i_log2 = np.log2(np.max((c_i,10**-16)));
-        g_i = 2**(g0+gainSlope*np.max((c_i_log2-c0_log2,0)));
+        c_i = max((cFast_i,cSlow_i));
+        
+        c_i_log2 = np.log2(max((c_i,10**-16)));
+        g_i = 2**(g0+gainSlope*max((c_i_log2-c0_log2,0)));
 
         G[iFrame] = g_i;
         Env[iFrame] = env_i;
@@ -175,8 +181,11 @@ def dualLoopTdAgcFunc(par,wavIn,*args):
         EnvFast[iFrame] = envFast_i;
     
     # apply gain
-    idxExpand = np.concatenate((np.ceil(np.arange(1/decFact,nFrame+1,1/decFact)),np.array([nFrame])))
-    GExpand = G(idxExpand);
+#    idxExpand = np.concatenate((np.ceil(np.arange(1/decFact,nFrame,1/decFact)),np.array([nFrame]))).astype(int)
+    idxExpand = np.floor(np.arange(1/decFact,nFrame,1/decFact)).astype(int)
+    print(idxExpand[-1:])
+    
+    GExpand = G[idxExpand];
     GExpand = signal.lfilter(np.ones(gainBufLen)/gainBufLen,1,GExpand)
     GExpand = GExpand[1:nSamp+1-gainBufLen];
     wavOut = np.concatenate((np.zeros(envBufLen),wavIn[gainBufLen+1:nSamp-envBufLen+1]))*GExpand
@@ -191,6 +200,7 @@ def dualLoopTdAgcFunc(par,wavIn,*args):
         warn('Unknown clipping mode: '+par['clipMode']+' . Using ''none'' instead.')
         
     return wavOut,GExpand,State,C,CSlow,CFast,Hold,Env,G,EnvFast
+#        return wavOut,GExpand
     
     
 def track(C_prev,In,weightPrev):

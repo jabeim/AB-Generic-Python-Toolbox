@@ -6,7 +6,7 @@ Created on Thu Sep  5 12:17:46 2019
 """
 
 import numpy as np
-import buffer
+from .buffer import buffer
 
 def winBufFunc(par,signalIn):
     
@@ -27,6 +27,6 @@ def winBufFunc(par,signalIn):
             b[:,:,n] = np.multiply(b[:,:,n],strat['window'])
     else:
         N = signalIn.size
-        b = buffer(signalIn,strat['nFft'],strat['nFft']-strat['nHop'],par['bufOpt'])
+        b = buffer(signalIn,strat['nFft'],strat['nFft']-strat['nHop'])
         b = np.multiply(b,strat['window'])    
     return b

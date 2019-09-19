@@ -7,11 +7,13 @@
 global GMTROOT
 
 if isempty(GMTROOT)
-    GMTROOT = getenv('GMTROOT');
+    GMTROOT = getenv('GMTROOT')
     if isempty(GMTROOT)
         error('Environment variable GMTROOT needs to be set!');
     end
 end
+
+GMTROOT = 'C:\Users\beimx004\Documents\GitHub\hackathon_simulator\GpyT\GpyT'
 
 addpath([GMTROOT, filesep, 'Utility'])
 initGmtClassPath;

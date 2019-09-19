@@ -57,7 +57,7 @@ def cvGainFunc(par,gMin,SNR):
     return g__
 
 
-def clearVoiceFunc(par,A):
+def clearvoiceFunc(par,A):
     import checkParamFields
     # check input
     checkParamFields(par,['tau_speech','tau_noise','durHold','threshHold',
