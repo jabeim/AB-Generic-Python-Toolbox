@@ -12,13 +12,19 @@ def winBufFunc(par,signalIn):
     
     strat = par['parent']
     
-    if len(signalIn.shape) > 1:
+
+    
+    
+
+    
+    if len(signalIn.shape) > 1: # if there is more than 1 channel, process by channel
         [M,N] = signalIn.shape
         if N>M:
             signalIn = signalIn.T;
             N = M;
             b = buffer(signalIn[:,0],strat['nFft'],strat['nFft']-strat['nHop'],par['bufOpt'])
             b = np.multiply(b,strat['window'])
+            
         temp = b;
         b = np.zeros((b.shape[0],b.shape[1],N))
         b[:,:,0] = temp
@@ -26,7 +32,10 @@ def winBufFunc(par,signalIn):
             b[:,:,n] = buffer(signalIn[:,n],strat['nFft'],strat['nFft']-strat['nHop'],par['bufOpt'])
             b[:,:,n] = np.multiply(b[:,:,n],strat['window'])
     else:
+
         N = signalIn.size
-        b = buffer(signalIn,strat['nFft'],strat['nFft']-strat['nHop'])
+        
+        b = buffer(signalIn,strat['nFft'],strat['nFft']-strat['nHop'],par['bufOpt'])
+
         b = np.multiply(b,strat['window'])    
     return b

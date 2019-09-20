@@ -126,13 +126,11 @@ def dualLoopTdAgcFunc(par,wavIn,*args):
     hold_i = 0;
     
     # loop over blocks
-    for iFrame in np.arange(1,nFrame):
+    for iFrame in np.arange(nFrame):
         idxWav = iFrame+1*decFact+np.arange(-(envBufLen-1),0)-1;
         idxWav = idxWav[idxWav>=0];
         idxWav = idxWav[idxWav <=nSamp];
         
-#        print(idxWav.shape)
-#        print(ctrl.shape)
         # compute envelope
         env_i = np.sum(np.abs(ctrl[idxWav])*envCoefs[-idxWav.size:]);
         envFast_i = clip1(env_i*fastHdrm);
@@ -172,6 +170,7 @@ def dualLoopTdAgcFunc(par,wavIn,*args):
         g_i = 2**(g0+gainSlope*max((c_i_log2-c0_log2,0)));
 
         G[iFrame] = g_i;
+        
         Env[iFrame] = env_i;
         C[iFrame] = c_i;
         CSlow[iFrame] = cSlow_i;
@@ -181,14 +180,15 @@ def dualLoopTdAgcFunc(par,wavIn,*args):
         EnvFast[iFrame] = envFast_i;
     
     # apply gain
-#    idxExpand = np.concatenate((np.ceil(np.arange(1/decFact,nFrame,1/decFact)),np.array([nFrame]))).astype(int)
-    idxExpand = np.floor(np.arange(1/decFact,nFrame,1/decFact)).astype(int)
-    print(idxExpand[-1:])
     
-    GExpand = G[idxExpand];
+    
+    idxExpand = np.concatenate((np.ceil(np.arange(1/decFact,nFrame+1/decFact,1/decFact)),np.array([nFrame]))).astype(int)
+    GExpand = G[idxExpand-1];
     GExpand = signal.lfilter(np.ones(gainBufLen)/gainBufLen,1,GExpand)
-    GExpand = GExpand[1:nSamp+1-gainBufLen];
-    wavOut = np.concatenate((np.zeros(envBufLen),wavIn[gainBufLen+1:nSamp-envBufLen+1]))*GExpand
+    
+    GExpand = GExpand[1:nSamp+2-gainBufLen];
+    
+    wavOut = np.concatenate((np.zeros(envBufLen),wavIn[gainBufLen:nSamp-envBufLen+1]))*GExpand
     
     if par['clipMode'].lower() == 'none':
         pass

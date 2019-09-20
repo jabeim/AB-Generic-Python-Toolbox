@@ -5,7 +5,7 @@ Created on Thu Sep  5 15:40:17 2019
 @author: beimx004
 """
 
-def buffer(X, n, p=0):
+def buffer(X, n, p=0,opt=None):
     import numpy as np
     
     '''
@@ -24,17 +24,49 @@ def buffer(X, n, p=0):
         Buffer array created from X
     '''
     
-    d = n - p
-    m = len(X)//d
     
-    if m * d != len(X):
-        m = m + 1
+    if 0 < p & p < n:  # overlapping buffer, pad with p zeros at the beginning
+        if opt is None:
+            opt = np.zeros((p))
+            Xb = np.concatenate((opt,X))
+        elif len(opt) == 0:
+            Xb = X
+        elif opt == 'nodelay':
+            Xb = X
+        else:
+            Xb = np.concatenate((opt,X))           
+    elif p < 0: # underlapping buffer (skips samples), skip opt samples if provided
+        if opt is None:
+            Xb = X
+        elif len(opt) == 0:
+            Xb = X
+        elif opt == 'nodelay':
+            raise ValueError('"bufOpt" must not be set to no delay if p < 0')            
+        else:
+            Xb = X[opt:]
+    else:
+        raise ValueError('p cannot be greater than n!')
+        
     
-    Xn = np.zeros(d*m)
-    Xn[:len(X)] = X
+    N = n;
+    M= np.ceil(len(X)/(n-p)).astype(int);
     
-    Xn = np.reshape(Xn,(m,d))
-    Xne = np.concatenate((Xn,np.zeros((1,d))))
-    Xn = np.concatenate((Xn,Xne[1:,0:p]), axis = 1)
+    print(N,M)
+    b = np.zeros((N,M))
+    print(b.shape)
+    print(Xb.dtype)
     
-    return np.transpose(Xn[:-1])
+    for i in np.arange(n,dtype=int):
+        
+        if i == 0:
+            a = 0
+            b = 6712
+            b[i,:] = Xb[a:b]
+        else:
+            a= i*M-i*p
+            b = (i+1)*M-(i+1)*p
+            b[i,:] = Xb[i*M-p:(i+1)*M-p]    
+    
+    
+    
+  

@@ -162,47 +162,48 @@ def demo3_procedural():
     # read specified wav file and scale
     sig_smp_wavIn = readWavFunc(parReadWav)
     sig_smp_wavScaled = sig_smp_wavIn/np.sqrt(np.mean(sig_smp_wavIn**2))*10**((65-111.6)/20) # set level to 65 dB SPL (assuming 111.6 dB full-scale)
+    
     # apply preemphasis
     sig_smp_wavPre = tdFilterFunc(parPre,sig_smp_wavScaled) # preemphahsis
     # automatic gain control
     sig_smp_wavAgc, sig_smp_gainAgc = dualLoopTdAgcFunc(parAgc,sig_smp_wavPre)[0:2] # agc
     # window and filter into channels
     sig_frm_audBuffers = winBufFunc(parWinBuf,sig_smp_wavAgc) # buffering
-    sig_frm_fft = fftFilterbankFunc(parFft,sig_frm_audBuffers) # stft
-    sig_frm_hilbert = hilbertEnvelopeFunc(parHilbert,sig_frm_fft) # get hilbert envelopes
-    sig_frm_energy = channelEnergyFunc(parEnergy,sig_frm_fft,sig_smp_gainAgc) # estimate channel energy
-    # apply clearvoice noise reduction
-    sig_frm_gainCv = clearvoiceFunc(parClearVoice,sig_frm_energy) # estimate noise reduction
-    sig_frm_hilbertMod = sig_frm_hilbert+sig_frm_gainCv # apply noise reduction gains to envelope
+#    sig_frm_fft = fftFilterbankFunc(parFft,sig_frm_audBuffers) # stft
+#    sig_frm_hilbert = hilbertEnvelopeFunc(parHilbert,sig_frm_fft) # get hilbert envelopes
+#    sig_frm_energy = channelEnergyFunc(parEnergy,sig_frm_fft,sig_smp_gainAgc) # estimate channel energy
+#    # apply clearvoice noise reduction
+#    sig_frm_gainCv = clearvoiceFunc(parClearVoice,sig_frm_energy) # estimate noise reduction
+#    sig_frm_hilbertMod = sig_frm_hilbert+sig_frm_gainCv # apply noise reduction gains to envelope
+#    
+#    # subsample every third FFT input frame
+#    sig_3frm_fft = sig_frm_fft[:,3::3]
+#    sig_3frm_peakFreq, sig_3frm_peakLoc = specPeakLocatorFunc(parPeak,sig_3frm_fft)
+#    #upsample back to full framerate (and add padding)
+#    sig_frm_peakFreq = np.repeat(np.repeat(sig_3frm_peakFreq,1,axis=0),3,axis=1)
+#    sig_frm_peakFreq = np.concatenate((np.zeros((sig_frm_peakFreq.shape[0],2)),sig_frm_peakFreq))
+#    sig_frm_peakFreq = sig_frm_peakFreq[:,:sig_frm_fft.shape[1]]
+#    sig_frm_peakLoc = np.repeat(np.repeat(sig_3frm_peakLoc,1,axis=0),3,axis=1)
+#    sig_frm_peakLoc = np.concatenate((np.zeros((sig_frm_peakLoc.shape[0],2)),sig_frm_peakLoc))
+#    sig_frm_peakLoc = sig_frm_peakLoc[:,:sig_frm_fft.shape[1]]
+#
+#
+#
+#    
+#    sig_frm_steerWeights = currentSteeringWeightsFunc(parSteer,sig_frm_peakLoc) # steer current based on peak location
+#    sig_ft_carrier, sig_ft_idxFtToFrm = carrierSynthesisFunc(parCarrierSynth,sig_frm_peakFreq) # carrier synthesis based on peak frequencies
+#    sig_ft_ampWords = f120MappingFunc(parMapper,sig_ft_carrier,                             # combine envelopes, carrier, current steering weights and compute outputs
+#                                      sig_frm_hilbertMod,sig_frm_steerWeights,sig_ft_idxFtToFrm)
+#    
+#    plotF120ElectrodogramFunc(parPlotter,sig_ft_ampWords)  # plot electrodogram
+#    
+#    # diplay CV gains
+#    plt.figure()
+#    G = sig_frm_gainCv*3.01
+#    plt.imshow(G)
+#    plt.colorbar
+#    plt.title('ClearVoice Gain [dB]')
+#    plt.xlabel('Frame #')
+#    plt.ylabel('Channel #')
     
-    # subsample every third FFT input frame
-    sig_3frm_fft = sig_frm_fft[:,3::3]
-    sig_3frm_peakFreq, sig_3frm_peakLoc = specPeakLocatorFunc(parPeak,sig_3frm_fft)
-    #upsample back to full framerate (and add padding)
-    sig_frm_peakFreq = np.repeat(np.repeat(sig_3frm_peakFreq,1,axis=0),3,axis=1)
-    sig_frm_peakFreq = np.concatenate((np.zeros((sig_frm_peakFreq.shape[0],2)),sig_frm_peakFreq))
-    sig_frm_peakFreq = sig_frm_peakFreq[:,:sig_frm_fft.shape[1]]
-    sig_frm_peakLoc = np.repeat(np.repeat(sig_3frm_peakLoc,1,axis=0),3,axis=1)
-    sig_frm_peakLoc = np.concatenate((np.zeros((sig_frm_peakLoc.shape[0],2)),sig_frm_peakLoc))
-    sig_frm_peakLoc = sig_frm_peakLoc[:,:sig_frm_fft.shape[1]]
-
-
-
-    
-    sig_frm_steerWeights = currentSteeringWeightsFunc(parSteer,sig_frm_peakLoc) # steer current based on peak location
-    sig_ft_carrier, sig_ft_idxFtToFrm = carrierSynthesisFunc(parCarrierSynth,sig_frm_peakFreq) # carrier synthesis based on peak frequencies
-    sig_ft_ampWords = f120MappingFunc(parMapper,sig_ft_carrier,                             # combine envelopes, carrier, current steering weights and compute outputs
-                                      sig_frm_hilbertMod,sig_frm_steerWeights,sig_ft_idxFtToFrm)
-    
-    plotF120ElectrodogramFunc(parPlotter,sig_ft_ampWords)  # plot electrodogram
-    
-    # diplay CV gains
-    plt.figure()
-    G = sig_frm_gainCv*3.01
-    plt.imshow(G)
-    plt.colorbar
-    plt.title('ClearVoice Gain [dB]')
-    plt.xlabel('Frame #')
-    plt.ylabel('Channel #')
-    
-    return sig_smp_wavIn
+    return sig_smp_wavIn, sig_smp_wavScaled, sig_smp_wavPre,sig_smp_wavAgc, sig_smp_gainAgc
