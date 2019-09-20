@@ -168,7 +168,7 @@ def demo3_procedural():
     # automatic gain control
     sig_smp_wavAgc, sig_smp_gainAgc = dualLoopTdAgcFunc(parAgc,sig_smp_wavPre)[0:2] # agc
     # window and filter into channels
-    sig_frm_audBuffers = winBufFunc(parWinBuf,sig_smp_wavAgc) # buffering
+#    sig_frm_audBuffers = winBufFunc(parWinBuf,sig_smp_wavAgc) # buffering
 #    sig_frm_fft = fftFilterbankFunc(parFft,sig_frm_audBuffers) # stft
 #    sig_frm_hilbert = hilbertEnvelopeFunc(parHilbert,sig_frm_fft) # get hilbert envelopes
 #    sig_frm_energy = channelEnergyFunc(parEnergy,sig_frm_fft,sig_smp_gainAgc) # estimate channel energy

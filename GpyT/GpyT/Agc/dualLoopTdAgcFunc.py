@@ -65,7 +65,7 @@ def dualLoopTdAgcFunc(par,wavIn,*args):
     
     #check input dimensions
     assert isinstance(wavIn,np.ndarray),'wavIn must be a numpy array!'
-    print (wavIn.shape)
+    
     if len(args) == 0: # no explicit control provided, use audio
         ctrl = wavIn;
     else: # control signal is provided, use the specified control mode option

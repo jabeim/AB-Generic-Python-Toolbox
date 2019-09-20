@@ -30,7 +30,8 @@ def buffer(X, n, p=0,opt=None):
             opt = np.zeros((p))
             Xb = np.concatenate((opt,X))
         elif len(opt) == 0:
-            Xb = X
+            opt = np.zeros((p))
+            Xb = np.concatenate((opt,X))
         elif opt == 'nodelay':
             Xb = X
         else:
@@ -51,22 +52,20 @@ def buffer(X, n, p=0,opt=None):
     N = n;
     M= np.ceil(len(X)/(n-p)).astype(int);
     
-    print(N,M)
     b = np.zeros((N,M))
-    print(b.shape)
-    print(Xb.dtype)
+ 
     
-    for i in np.arange(n,dtype=int):
-        
+    for i in np.arange(M,dtype=int):        
         if i == 0:
-            a = 0
-            b = 6712
-            b[i,:] = Xb[a:b]
+            b[:,i] = Xb[:n]
         else:
-            a= i*M-i*p
-            b = (i+1)*M-(i+1)*p
-            b[i,:] = Xb[i*M-p:(i+1)*M-p]    
-    
+            x1= i*(n-p)
+            x2 = x1+n            
+            if x2 > Xb.size:
+                b[:,i] = np.concatenate((Xb,np.zeros((x2-Xb.size))))[x1:x2]    
+            else:
+                b[:,i] = Xb[x1:x2]    
+    return b
     
     
   

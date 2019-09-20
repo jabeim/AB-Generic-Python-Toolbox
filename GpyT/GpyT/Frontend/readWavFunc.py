@@ -14,6 +14,7 @@ def readWavFunc(par):
     stratFs = par['parent']['fs']
     
     [srcFs,signalIn] = wavread(name);
+    
     # rescale from integer words to float for audio processing
     
     if signalIn.dtype == 'uint8':
@@ -33,7 +34,8 @@ def readWavFunc(par):
     if len(signalIn.shape) > 1:
         signalIn = signalIn[:,par['iChannel']-1]
     else:
-        signalIn = signalIn
+        
+        signalIn = signalIn[np.newaxis,:];
     
     
     
@@ -45,11 +47,12 @@ def readWavFunc(par):
     
     if srcFs != stratFs:
         if len(signalIn.shape) > 1:
-            resampledSig = np.zeros((signalIn.shape[0],np.round(stratFs*signalIn.shape[1]/srcFs)))
+            resampledSig = np.zeros((signalIn.shape[0],np.ceil(stratFs*signalIn.shape[1]/srcFs).astype(int)))
             for iCh in np.arange(signalIn.shape[0]):
                 resampledSig[iCh,:] = resample(signalIn[iCh,:],stratFs,srcFs)
+            signalIn = resampledSig
         else:
-            signalIn = np.squeeze(resample(signalIn,stratFs,srcFs))
+            signalIn = resample(signalIn,stratFs,srcFs)
             
         
     

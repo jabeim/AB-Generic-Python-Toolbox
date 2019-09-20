@@ -34,8 +34,7 @@ def winBufFunc(par,signalIn):
     else:
 
         N = signalIn.size
-        
         b = buffer(signalIn,strat['nFft'],strat['nFft']-strat['nHop'],par['bufOpt'])
-
-        b = np.multiply(b,strat['window'])    
+#        b = np.multiply(b,strat['window'].T)
+        b = b*strat['window']
     return b
