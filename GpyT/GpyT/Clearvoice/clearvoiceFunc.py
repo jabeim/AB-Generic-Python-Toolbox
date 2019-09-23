@@ -52,13 +52,13 @@ import numpy as np
 
 
 def cvGainFunc(par,gMin,SNR):
-    SNR = np.min(np.max(SNR,par['snrFloor']),par['snrCeil'])
+    SNR = np.minimum(np.maximum(SNR,par['snrFloor']),par['snrCeil'])
     g__ = gMin+np.divide((1-gMin),1+np.exp(-par['slopeFact']*(SNR-par['snrSlope'])));
     return g__
 
 
 def clearvoiceFunc(par,A):
-    import checkParamFields
+    from Utility.checkParamFields import checkParamFields
     # check input
     checkParamFields(par,['tau_speech','tau_noise','durHold','threshHold',
                           'maxAtt','snrFloor','snrCeil','snrSlope','slopeFact',
@@ -67,7 +67,7 @@ def clearvoiceFunc(par,A):
     strat = par['parent']
     initState = par['initState']
     noiseDS = par['noiseEstDecimation']
-    dtFrame = strat['nHop']/strat['Fs']
+    dtFrame = strat['nHop']/strat['fs']
     
     nCh,nFrame = A.shape
     
@@ -77,15 +77,15 @@ def clearvoiceFunc(par,A):
     threshHold = par['threshHold']
     maxHold = par['durHold']/(dtFrame*noiseDS)
     maxAttLin = 10**(-np.abs(par['maxAtt'])/20)
-    gMin = 1+(maxAttLin-1)/(1-1/(1+np.exp(par['slopeFact']*(par['snrFloor']-par['snrSlope']))))
     
-    G = np.empty(nCh,nFrame)
-    Vs_out = np.empty(nCh,nFrame)
-    Vn_out = np.empty(nCh,nFrame)
-    Hold_out = np.empty(nCh,nFrame)
+    gMin = 1+(maxAttLin-1) /(1-1/(1+np.exp(-par['slopeFact']*(par['snrFloor']-par['snrSlope']))))
     
-    logA = np.maximum([-100,20*np.log10(A)])
+    G = np.empty((nCh,nFrame))
+    Vs_out = np.empty((nCh,nFrame))
+    Vn_out = np.empty((nCh,nFrame))
+    Hold_out = np.empty((nCh,nFrame))
     
+    logA = np.maximum(-100,20*np.log10(A))
     
     V_s = np.zeros(nCh)
     V_n = np.zeros(nCh)
@@ -115,14 +115,19 @@ def clearvoiceFunc(par,A):
             HoldReady[maskOnset] = False
             HoldCount[maskOnset] = maxHold
             
+            
+            
             HoldCount[maskHold] -= 1
-            Hold[maskHold & HoldCount <= 0] = False
+            Hold[np.squeeze(maskHold & [HoldCount <= 0])] = False
             Hold[maskSteady] = False
             HoldReady[maskSteady] = True
             
         # compute gains
         SNR = V_s-V_n
-        G[:,iFrame] = cvGainFunc(par,gMin,SNR)
+        
+
+        
+        G[:,iFrame] = cvGainFunc(par,gMin,SNR)            
         Vn_out[:,iFrame] = V_n;
         Vs_out[:,iFrame] = V_s
         Hold_out[:,iFrame] = Hold
@@ -131,7 +136,7 @@ def clearvoiceFunc(par,A):
     A_out = np.multiply(A,G);
 
     if par['gainDomain'].lower() == 'linear' or par['gainDomain'].lower() == 'lin':
-            G_out = G
+        G_out = G
     elif par['gainDomain'].lower() == 'log' or par['gainDomain'].lower() == 'log2':
         G_out = 2*np.log2(G);
     elif par['gainDomain'].lower() == 'db':

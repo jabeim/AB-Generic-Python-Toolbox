@@ -27,9 +27,8 @@ def readWavFunc(par):
         maxBit = 2.**(bits-1)
     elif signalIn.dtype == 'float32':  # dont rescale 32bit float data
         maxBit = 0;
-        
-    signalIn = signalIn/(maxBit+1) 
     
+    signalIn = signalIn/(maxBit+1) 
         
     if len(signalIn.shape) > 1:
         signalIn = signalIn[:,par['iChannel']-1]
@@ -39,23 +38,22 @@ def readWavFunc(par):
     
     
     
+    
     if len(par['tStartEnd']) > 0:
         iStartEnd = np.round(par['tStartEnd']*srcFs+np.array([1,0]));
         signalIn = signalIn[iStartEnd[0]:iStartEnd[1]];
         
     
     
-    if srcFs != stratFs:
-        if len(signalIn.shape) > 1:
+    if srcFs != stratFs:    # This implementation is not mathematically identical to matlab
+        if signalIn.shape[0] > 1:
             resampledSig = np.zeros((signalIn.shape[0],np.ceil(stratFs*signalIn.shape[1]/srcFs).astype(int)))
             for iCh in np.arange(signalIn.shape[0]):
-                resampledSig[iCh,:] = resample(signalIn[iCh,:],stratFs,srcFs)
+                resampledSig[iCh,:] = resample(signalIn[iCh,:],stratFs,srcFs,axis=1)
             signalIn = resampledSig
         else:
-            signalIn = resample(signalIn,stratFs,srcFs)
+            signalIn = resample(signalIn,stratFs,srcFs,axis=1)
             
-        
-    
     return signalIn
     
         

@@ -18,13 +18,13 @@ def channelEnergyFunc(par,X,gAgc):
     assert isinstance(gAgc,np.ndarray) or gAgc.size == 0,'gAgc, if supplied, must be a vector!'
     
     # determine if AGC is sample-based and deciimate to frame rate if necessary
-    lenAgcIn = gAgc.size
+    lenAgcIn = gAgc.shape[1]
     if lenAgcIn > nFrames:
-        gAgc = gAgc[np.arange(nHop,lenAgcIn,nHop)]
-        assert np.abs(gAgc.size-nFrames) <= 2,'Length of sample-based gAgc input incompatable with nr. frames in STFT matrix: length/nHop must = approx nFrames.'
+        gAgc = gAgc[:,nHop-1:-1:nHop]
+        assert np.abs(gAgc.shape[1]-nFrames) <= 2,'Length of sample-based gAgc input incompatable with nr. frames in STFT matrix: length/nHop must = approx nFrames.'
         if gAgc.size < nFrames:
-            gAgc = np.concatenate(gAgc,gAgc[-1]*np.ones(nFrames-gAgc.size));
-            gAgc = gAgc[0:nFrames];
+            gAgc = np.concatenate((gAgc,gAgc[:,-1:]*np.ones((gAgc.shape[0],nFrames-gAgc.shape[1]))),axis=1);
+            gAgc = gAgc[:,0:nFrames];
         elif lenAgcIn > 0 and lenAgcIn < nFrames:
             raise ValueError('Length of gAgc input incompatible with number of frames in STFT matrix: length must be >= nr. frames.')
         

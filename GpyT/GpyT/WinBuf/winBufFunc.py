@@ -23,18 +23,20 @@ def winBufFunc(par,signalIn):
             signalIn = signalIn.T;
             N = M;
             b = buffer(signalIn[:,0],strat['nFft'],strat['nFft']-strat['nHop'],par['bufOpt'])
-            b = np.multiply(b,strat['window'])
+            b = np.multiply(b,strat['window'].T)
             
         temp = b;
         b = np.zeros((b.shape[0],b.shape[1],N))
         b[:,:,0] = temp
         for n in np.arange(1,N):
             b[:,:,n] = buffer(signalIn[:,n],strat['nFft'],strat['nFft']-strat['nHop'],par['bufOpt'])
-            b[:,:,n] = np.multiply(b[:,:,n],strat['window'])
+            b[:,:,n] = np.multiply(b[:,:,n],strat['window'].T)
     else:
 
         N = signalIn.size
         b = buffer(signalIn,strat['nFft'],strat['nFft']-strat['nHop'],par['bufOpt'])
-#        b = np.multiply(b,strat['window'].T)
-        b = b*strat['window']
+        b = np.multiply(b,strat['window'].T)
+#        b = b*strat['window'].T
+        
+    b = b.squeeze()  # remove singleton dimension
     return b

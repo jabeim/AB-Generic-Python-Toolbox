@@ -27,7 +27,7 @@ def specPeakLocatorFunc(par,stftIn):
     PSD = np.real(stftIn*np.conj(stftIn))/2
     PSD = np.maximum(PSD,10**(-120/20))
     
-    currentBin = startBin
+    currentBin = startBin-1  # account for matlab indexing
     
     for i in np.arange(nChan):
         currBinIdx = np.arange(currentBin,currentBin+nBinLims[i])

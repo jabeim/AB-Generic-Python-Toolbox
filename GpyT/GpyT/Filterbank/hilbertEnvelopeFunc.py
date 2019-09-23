@@ -31,16 +31,16 @@ def hilbertEnvelopeFunc(par,X):
     
     strat = par['parent'];
     nChan = strat['nChan'];
-    startBin = strat['startBin'];
+    startBin = strat['startBin'];    
     nBinLims = strat['nBinLims'];
     upperBound = par['outputUpperBound']
     lowerBound = par['outputLowerBound']
     
-    X[np.arange(0,X.shape[1],2),:] = -X[np.arange(0,X.shape[1],2),:];
+    X[np.arange(0,X.shape[0]-1,2),:] = -X[np.arange(0,X.shape[0]-1,2),:];
     L = X.shape[1]
     env = np.zeros((nChan,L))
     envNoLog = np.zeros((nChan,L))
-    currentBin = startBin;
+    currentBin = startBin-1; # correcting for matlab base-1 indexing;
     
     numFullFrqBin = np.floor(nBinLims/4);
     numPartFrqBin = np.mod(nBinLims,4);
@@ -48,25 +48,29 @@ def hilbertEnvelopeFunc(par,X):
     
     logCorrect = logFiltCorrect+par['outputOffset']+16
     
-    for i in np.arange(nChan-1):
-        for j in np.arange(numFullFrqBin[i]-1):
-            sr = np.sum(np.real(X[np.arange(currentBin,currentBin+4),:]))
-            si = np.sum(np.imag(X[np.arange(currentBin,currentBin+4),:]))
+    for i in np.arange(nChan):
+        for j in np.arange(numFullFrqBin[i]):
+            sr = np.sum(np.real(X[currentBin:currentBin+4,:]),axis=0)
+            si = np.sum(np.imag(X[currentBin:currentBin+4,:]),axis=0)
             env[i,:] = env[i,:]+sr**2+si**2
             currentBin +=4 
-        sr = np.sum(np.real(X[np.arange(currentBin,currentBin+numPartFrqBin[i]),:]))
-        si = np.sum(np.imag(X[np.arange(currentBin,currentBin+numPartFrqBin[i]),:]))
+        sr = np.sum(np.real(X[currentBin:currentBin+numPartFrqBin[i],:]),axis = 0)
+        si = np.sum(np.imag(X[currentBin:currentBin+numPartFrqBin[i],:]),axis = 0)
+        
         env[i,:] = env[i,:]+sr**2+si**2
+        
         envNoLog[i,:] = env[i,:];
         env[i,:] = np.log2(env[i,:]);
         
-        if nBinLims[i] > 4:
-            env[i,:] = env[i,:] +logCorrect[4]
+        if nBinLims[i] > logCorrect.size-1:
+            env[i,:] = env[i,:] +logCorrect[-1:]
         else:
             env[i,:] = env[i,:]+logCorrect[nBinLims[i]];
         currentBin+= numPartFrqBin[i]
+    
     ix = ~np.isfinite(env)
     env[ix] = 0;
+    
     
     env = np.maximum(np.minimum(env,upperBound),lowerBound);
     return env

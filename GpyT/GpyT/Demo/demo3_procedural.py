@@ -24,6 +24,9 @@ from Plotting.plotF120ElectrodogramFunc import plotF120ElectrodogramFunc
 
 def demo3_procedural():
     
+    stratWindow = 0.5*(np.blackman(256)+np.hanning(256))
+    stratWindow = stratWindow.reshape(1,stratWindow.size)
+    
     parStrat = {
             'fs' : 17400,
             'nFft' : 256,
@@ -31,7 +34,7 @@ def demo3_procedural():
             'nChan' : 15,
             'startBin' : 6,
             'nBinLims' : np.array([2,2,1,2,2,2,3,4,4,5,6,7,8,10,56]),
-            'window' : 0.5*(np.blackman(256)+np.hanning(256)),
+            'window' : stratWindow,
             'pulseWidth' : 18,
             'verbose' : 0
             }
@@ -168,17 +171,17 @@ def demo3_procedural():
     # automatic gain control
     sig_smp_wavAgc, sig_smp_gainAgc = dualLoopTdAgcFunc(parAgc,sig_smp_wavPre)[0:2] # agc
     # window and filter into channels
-#    sig_frm_audBuffers = winBufFunc(parWinBuf,sig_smp_wavAgc) # buffering
-#    sig_frm_fft = fftFilterbankFunc(parFft,sig_frm_audBuffers) # stft
-#    sig_frm_hilbert = hilbertEnvelopeFunc(parHilbert,sig_frm_fft) # get hilbert envelopes
-#    sig_frm_energy = channelEnergyFunc(parEnergy,sig_frm_fft,sig_smp_gainAgc) # estimate channel energy
+    sig_frm_audBuffers = winBufFunc(parWinBuf,sig_smp_wavAgc) # buffering
+    sig_frm_fft = fftFilterbankFunc(parFft,sig_frm_audBuffers) # stft
+    sig_frm_hilbert = hilbertEnvelopeFunc(parHilbert,sig_frm_fft) # get hilbert envelopes
+    sig_frm_energy = channelEnergyFunc(parEnergy,sig_frm_fft,sig_smp_gainAgc) # estimate channel energy
 #    # apply clearvoice noise reduction
-#    sig_frm_gainCv = clearvoiceFunc(parClearVoice,sig_frm_energy) # estimate noise reduction
-#    sig_frm_hilbertMod = sig_frm_hilbert+sig_frm_gainCv # apply noise reduction gains to envelope
+    sig_frm_gainCv = clearvoiceFunc(parClearVoice,sig_frm_energy)[0] # estimate noise reduction
+    sig_frm_hilbertMod = sig_frm_hilbert+sig_frm_gainCv # apply noise reduction gains to envelope
 #    
 #    # subsample every third FFT input frame
-#    sig_3frm_fft = sig_frm_fft[:,3::3]
-#    sig_3frm_peakFreq, sig_3frm_peakLoc = specPeakLocatorFunc(parPeak,sig_3frm_fft)
+    sig_3frm_fft = sig_frm_fft[:,3::3]
+    sig_3frm_peakFreq, sig_3frm_peakLoc = specPeakLocatorFunc(parPeak,sig_3frm_fft)
 #    #upsample back to full framerate (and add padding)
 #    sig_frm_peakFreq = np.repeat(np.repeat(sig_3frm_peakFreq,1,axis=0),3,axis=1)
 #    sig_frm_peakFreq = np.concatenate((np.zeros((sig_frm_peakFreq.shape[0],2)),sig_frm_peakFreq))
@@ -206,4 +209,4 @@ def demo3_procedural():
 #    plt.xlabel('Frame #')
 #    plt.ylabel('Channel #')
     
-    return sig_smp_wavIn, sig_smp_wavScaled, sig_smp_wavPre,sig_smp_wavAgc, sig_smp_gainAgc
+    return sig_smp_wavIn, sig_smp_wavScaled, sig_smp_wavPre,sig_smp_wavAgc, sig_smp_gainAgc,sig_frm_audBuffers,sig_frm_fft,sig_frm_hilbert,sig_frm_energy,sig_frm_gainCv,sig_3frm_fft

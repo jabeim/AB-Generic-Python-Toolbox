@@ -132,7 +132,7 @@ def dualLoopTdAgcFunc(par,wavIn,*args):
         idxWav = idxWav[idxWav <=nSamp];
         
         # compute envelope
-        env_i = np.sum(np.abs(ctrl[idxWav])*envCoefs[-idxWav.size:]);
+        env_i = np.sum(np.abs(ctrl[0,idxWav])*envCoefs[-idxWav.size:]);   # Use only first channel wavform needs to be single channel at this state
         envFast_i = clip1(env_i*fastHdrm);
         # update envelope averagers
         if env_i > cSlow_i:
@@ -187,8 +187,10 @@ def dualLoopTdAgcFunc(par,wavIn,*args):
     GExpand = signal.lfilter(np.ones(gainBufLen)/gainBufLen,1,GExpand)
     
     GExpand = GExpand[1:nSamp+2-gainBufLen];
-    
-    wavOut = np.concatenate((np.zeros(envBufLen),wavIn[gainBufLen:nSamp-envBufLen+1]))*GExpand
+    GExpand = GExpand.reshape((1,GExpand.size))
+        
+    wavOut = np.concatenate((np.zeros((1,envBufLen)),wavIn[:,gainBufLen:nSamp-envBufLen+1]),axis=1)*GExpand
+    wavOut = wavOut.reshape((1,wavOut.size))
     
     if par['clipMode'].lower() == 'none':
         pass

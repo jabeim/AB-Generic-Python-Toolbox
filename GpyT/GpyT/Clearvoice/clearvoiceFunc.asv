@@ -63,7 +63,7 @@ function [G_out, A_out, Vn_out, Vs_out, Hold_out] = clearvoiceFunc(par, A)
     maxHold = par.durHold / (dtFrame * noiseDS);
     maxAttLin = 10^(-abs(par.maxAtt)/20);  % max. attenuation as linear factor
     gMin = 1 + (maxAttLin - 1) / (1 - 1/(1+exp(-par.slopeFact * (par.snrFloor - par.snrSlope))));
-    
+   
     % define gain function given parameters in par
     function g__ = cvGainFunc(SNR) % CV gain function according to spec
         SNR = min( max(SNR, par.snrFloor), par.snrCeil);
@@ -118,27 +118,17 @@ function [G_out, A_out, Vn_out, Vs_out, Hold_out] = clearvoiceFunc(par, A)
    
         % compute gains
         SNR = V_s - V_n;
-
         
         G(:,iFrame) = cvGainFunc(SNR);
         Vn_out(:,iFrame) = V_n;
         Vs_out(:,iFrame) = V_s;
         Hold_out(:, iFrame) = Hold;
-        
-        if iFrame == 1
-            disp(SNR)
-            disp(G(:,1))
-%             disp(Vn_out)
-%             disp(Vs_out)
-%             disp(Hold_out)
-        end
-        
     end
     
     % apply gains
     A_out = A .* G;
     
-    
+    di
     switch lower(par.gainDomain)
         case {'linear','lin'}
             G_out = G;

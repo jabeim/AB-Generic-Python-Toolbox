@@ -48,6 +48,8 @@ for i = 1:nChan
         env(i, :)= env(i, :) + (sr.^2) + (si.^2);
         bin = bin + 4;
     end
+    
+    disp([bin bin+numpartFrqBin(i)-1])
     sr = sum(real(X(bin:bin + numpartFrqBin(i) - 1, :)), 1);
     si = sum(imag(X(bin:bin + numpartFrqBin(i) - 1, :)), 1);
     env(i, :) = env(i, :) + (sr.^2) + (si.^2);
