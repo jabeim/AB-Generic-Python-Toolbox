@@ -19,10 +19,10 @@ def specPeakLocatorFunc(par,stftIn):
     
     nBins,nFrames = stftIn.shape
     
-    maxBin = np.zeros((nChan,nFrames))
+    maxBin = np.zeros((nChan,nFrames),dtype=int)
     freqInterp = np.zeros((nChan,nFrames))
     loc = np.zeros((nChan,nFrames))
-    binCorrection = np.zeros((nChan,nFrames))
+    binCorrection = np.zeros((1,nFrames))
     
     PSD = np.real(stftIn*np.conj(stftIn))/2
     PSD = np.maximum(PSD,10**(-120/20))
@@ -30,25 +30,23 @@ def specPeakLocatorFunc(par,stftIn):
     currentBin = startBin-1  # account for matlab indexing
     
     for i in np.arange(nChan):
-        currBinIdx = np.arange(currentBin,currentBin+nBinLims[i])
-        argMaxPsd = np.argmax(PSD[currBinIdx,:],axis=0)
-        maxBin[i,:] = currentBin+argMaxPsd-1
+        currBinIdx = np.arange(currentBin,currentBin+nBinLims[i])      
+        argMaxPsd = np.argmax(PSD[currBinIdx,:],axis=0)     
+        maxBin[i,:] = currentBin+argMaxPsd
+        currentBin+=nBinLims[i]
         
-    for i in np.arange(nChan):
-        ind_m = np.ravel_multi_index(np.array([maxBin[i,:],np.arange(nFrames)]),PSD.shape)
-        midVal = np.log2(PSD[ind_m])
-        leftVal = np.log2(PSD[ind_m-1])
-        rightVal = np.log2(PSD[ind_m+1])
         
-        maxLeftRight = np.max(np.array([leftVal,rightVal]))
-        midIsMax = midVal > maxLeftRight
+    for i in np.arange(nChan):        
         
-        binCorrection[midIsMax] = 0.5 * (rightVal[midIsMax]-leftVal[midIsMax])/(2*midVal[midIsMax]-leftVal[midIsMax]-rightVal[midIsMax])
-        
-        binCorrection[~midIsMax] = 0.5*(rightVal[~midIsMax]==maxLeftRight[~midIsMax])-.5*(leftVal[~midIsMax]==maxLeftRight[~midIsMax])
-        
-        freqInterp[i,:] = fftBinWidth * (maxBin[i,:]+binCorrection-1)
-        deltaLocIdx = maxBin[i,:] + np.sign(binCorrection)
+        midVal = np.log2(PSD[maxBin[i,:],np.arange(nFrames)])
+        leftVal = np.log2(PSD[maxBin[i,:]-1,np.arange(nFrames)])
+        rightVal = np.log2(PSD[maxBin[i,:]+1,np.arange(nFrames)])               
+        maxLeftRight = np.maximum(leftVal,rightVal)
+        midIsMax = midVal > maxLeftRight        
+        binCorrection[:,midIsMax] = 0.5 * (rightVal[midIsMax]-leftVal[midIsMax])/(2*midVal[midIsMax]-leftVal[midIsMax]-rightVal[midIsMax])        
+        binCorrection[:,~midIsMax] = 0.5*(rightVal[~midIsMax]==maxLeftRight[~midIsMax])-.5*(leftVal[~midIsMax]==maxLeftRight[~midIsMax])        
+        freqInterp[i,:] = fftBinWidth * (maxBin[i,:]+binCorrection-1)        
+        deltaLocIdx = maxBin[i,:] + np.sign(binCorrection).astype(int)
         loc[i,:] = binToLoc[maxBin[i,:]]+binCorrection*np.abs(binToLoc[maxBin[i,:]]-binToLoc[deltaLocIdx])
         
     return freqInterp, loc 

@@ -24,11 +24,11 @@ function Y = tdFilterFunc(par, x)
     
     nCh = size(par.coeffNum,1);
     
-    disp(nCh)
+%     disp(nCh)
 
     Y = zeros(nCh, length(x));
     
-    size(Y)
+%     size(Y)
 
     for iCh = 1:nCh
         Y(iCh,:) = filter(par.coeffNum(iCh,:), par.coeffDenom(iCh,:), x);

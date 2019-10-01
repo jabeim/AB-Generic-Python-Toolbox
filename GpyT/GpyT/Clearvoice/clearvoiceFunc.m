@@ -126,8 +126,8 @@ function [G_out, A_out, Vn_out, Vs_out, Hold_out] = clearvoiceFunc(par, A)
         Hold_out(:, iFrame) = Hold;
         
         if iFrame == 1
-            disp(SNR)
-            disp(G(:,1))
+%             disp(SNR)
+%             disp(G(:,1))
 %             disp(Vn_out)
 %             disp(Vs_out)
 %             disp(Hold_out)

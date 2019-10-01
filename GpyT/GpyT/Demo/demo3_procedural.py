@@ -126,7 +126,7 @@ def demo3_procedural():
                                             6034, 6107, 6176, 6240, 6304, 6368, 6432, 6496, 6560, 6624, 
                                             6682, 6733, 6784, 6835, 6886, 6938, 6989, 7040, 7091, 7142, 
                                             7189, 7232, 7275, 7317, 7360, 7403, 7445, 7488, 7531, 7573, 
-                                            7616, 7659]),7679*np.ones((53,))))
+                                            7616, 7659]),7679*np.ones((53,)))).astype(int)
     }
     
     parSteer = {
@@ -180,7 +180,7 @@ def demo3_procedural():
     sig_frm_hilbertMod = sig_frm_hilbert+sig_frm_gainCv # apply noise reduction gains to envelope
 #    
 #    # subsample every third FFT input frame
-    sig_3frm_fft = sig_frm_fft[:,3::3]
+    sig_3frm_fft = sig_frm_fft[:,2::3]
     sig_3frm_peakFreq, sig_3frm_peakLoc = specPeakLocatorFunc(parPeak,sig_3frm_fft)
 #    #upsample back to full framerate (and add padding)
 #    sig_frm_peakFreq = np.repeat(np.repeat(sig_3frm_peakFreq,1,axis=0),3,axis=1)
