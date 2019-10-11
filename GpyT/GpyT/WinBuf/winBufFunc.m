@@ -28,7 +28,7 @@ function b = winBufFunc(par, signalIn)
 %  14 Aug 2019, PH - swapped function arguments
 strat = par.parent;
 
-[M, N] = size(signalIn);
+[M, N] = size(signalIn)
 if N>M
 %    warning('winBufFun: input signal wider than long (%dx%d). Transposing.', M, N);
     signalIn = signalIn.';

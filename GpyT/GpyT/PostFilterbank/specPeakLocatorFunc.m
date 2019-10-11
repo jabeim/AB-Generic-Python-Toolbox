@@ -64,9 +64,7 @@ end
 
 % 2nd step: refine peak estimation by parabolic interpolation around maxima
 for i = 1:nChan
-    disp(size(PSD))
-    disp(size(maxBin(i,:)))
-    disp(size(1:nFrames))
+
     
     ind_m = sub2ind(size(PSD), maxBin(i,:), 1:nFrames)';
     if i == 1

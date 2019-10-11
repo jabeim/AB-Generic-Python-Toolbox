@@ -6,9 +6,13 @@ Created on Wed Sep 18 14:55:51 2019
 """
 # Import necessary functions
 import numpy as np
+from scipy.io import loadmat
 import matplotlib.pyplot as plt
 
 from Frontend.readWavFunc import readWavFunc
+
+from Frontend.readMatFunc import readMatFunc
+
 from Frontend.tdFilterFunc import tdFilterFunc
 from Agc.dualLoopTdAgcFunc import dualLoopTdAgcFunc
 from WinBuf.winBufFunc import winBufFunc
@@ -22,10 +26,16 @@ from PostFilterbank.carrierSynthesisFunc import carrierSynthesisFunc
 from Mapping.f120MappingFunc import f120MappingFunc
 from Plotting.plotF120ElectrodogramFunc import plotF120ElectrodogramFunc
 
+
+
+
 def demo3_procedural():
     
-    stratWindow = 0.5*(np.blackman(256)+np.hanning(256))
-    stratWindow = stratWindow.reshape(1,stratWindow.size)
+    matWindow = loadmat('C:/Users/beimx004/Documents/GitHub/hackathon_simulator/GpyT/GpyT/WinBuf/windowData.mat')
+    stratWindow = matWindow['winData'].T
+    
+#    stratWindow = 0.5*(np.blackman(256)+np.hanning(256))
+#    stratWindow = stratWindow.reshape(1,stratWindow.size)
     
     parStrat = {
             'fs' : 17400,
@@ -126,7 +136,7 @@ def demo3_procedural():
                                             6034, 6107, 6176, 6240, 6304, 6368, 6432, 6496, 6560, 6624, 
                                             6682, 6733, 6784, 6835, 6886, 6938, 6989, 7040, 7091, 7142, 
                                             7189, 7232, 7275, 7317, 7360, 7403, 7445, 7488, 7531, 7573, 
-                                            7616, 7659]),7679*np.ones((53,)))).astype(int)
+                                            7616, 7659]),7679*np.ones((53,))))/512
     }
     
     parSteer = {
@@ -163,7 +173,9 @@ def demo3_procedural():
             'enable' : True
             }
     # read specified wav file and scale
-    sig_smp_wavIn = readWavFunc(parReadWav)
+#    sig_smp_wavIn = readWavFunc(parReadWav)
+    sig_smp_wavIn = readMatFunc(parReadWav)     # read the resampled data from matlab script to ensure equivalence for debugging
+    
     sig_smp_wavScaled = sig_smp_wavIn/np.sqrt(np.mean(sig_smp_wavIn**2))*10**((65-111.6)/20) # set level to 65 dB SPL (assuming 111.6 dB full-scale)
     
     # apply preemphasis
@@ -173,9 +185,15 @@ def demo3_procedural():
     # window and filter into channels
     sig_frm_audBuffers = winBufFunc(parWinBuf,sig_smp_wavAgc) # buffering
     sig_frm_fft = fftFilterbankFunc(parFft,sig_frm_audBuffers) # stft
+    
     sig_frm_hilbert = hilbertEnvelopeFunc(parHilbert,sig_frm_fft) # get hilbert envelopes
-    sig_frm_energy = channelEnergyFunc(parEnergy,sig_frm_fft,sig_smp_gainAgc) # estimate channel energy
+#    sig_frm_energy = channelEnergyFunc(parEnergy,sig_frm_fft,sig_smp_gainAgc) # estimate channel energy
 #    # apply clearvoice noise reduction
+    
+    matData = loadmat('C:/Users/beimx004/Documents/GitHub/hackathon_simulator/GpyT/GpyT/sig_frm_energy.mat')
+    
+    sig_frm_energy = matData['sig_frm_energy'];
+    
     sig_frm_gainCv = clearvoiceFunc(parClearVoice,sig_frm_energy)[0] # estimate noise reduction
     sig_frm_hilbertMod = sig_frm_hilbert+sig_frm_gainCv # apply noise reduction gains to envelope
 #    
@@ -183,17 +201,16 @@ def demo3_procedural():
     sig_3frm_fft = sig_frm_fft[:,2::3]
     sig_3frm_peakFreq, sig_3frm_peakLoc = specPeakLocatorFunc(parPeak,sig_3frm_fft)
 #    #upsample back to full framerate (and add padding)
-#    sig_frm_peakFreq = np.repeat(np.repeat(sig_3frm_peakFreq,1,axis=0),3,axis=1)
-#    sig_frm_peakFreq = np.concatenate((np.zeros((sig_frm_peakFreq.shape[0],2)),sig_frm_peakFreq))
-#    sig_frm_peakFreq = sig_frm_peakFreq[:,:sig_frm_fft.shape[1]]
-#    sig_frm_peakLoc = np.repeat(np.repeat(sig_3frm_peakLoc,1,axis=0),3,axis=1)
-#    sig_frm_peakLoc = np.concatenate((np.zeros((sig_frm_peakLoc.shape[0],2)),sig_frm_peakLoc))
-#    sig_frm_peakLoc = sig_frm_peakLoc[:,:sig_frm_fft.shape[1]]
-#
-#
+    sig_frm_peakFreq = np.repeat(np.repeat(sig_3frm_peakFreq,1,axis=0),3,axis=1)
+    sig_frm_peakFreq = np.concatenate((np.zeros((sig_frm_peakFreq.shape[0],2)),sig_frm_peakFreq),axis=1)
+    sig_frm_peakFreq = sig_frm_peakFreq[:,:sig_frm_fft.shape[1]]
+    sig_frm_peakLoc = np.repeat(np.repeat(sig_3frm_peakLoc,1,axis=0),3,axis=1)
+    sig_frm_peakLoc = np.concatenate((np.zeros((sig_frm_peakLoc.shape[0],2)),sig_frm_peakLoc),axis=1)
+    sig_frm_peakLoc = sig_frm_peakLoc[:,:sig_frm_fft.shape[1]]
+
 #
 #    
-#    sig_frm_steerWeights = currentSteeringWeightsFunc(parSteer,sig_frm_peakLoc) # steer current based on peak location
+    sig_frm_steerWeights = currentSteeringWeightsFunc(parSteer,sig_frm_peakLoc) # steer current based on peak location
 #    sig_ft_carrier, sig_ft_idxFtToFrm = carrierSynthesisFunc(parCarrierSynth,sig_frm_peakFreq) # carrier synthesis based on peak frequencies
 #    sig_ft_ampWords = f120MappingFunc(parMapper,sig_ft_carrier,                             # combine envelopes, carrier, current steering weights and compute outputs
 #                                      sig_frm_hilbertMod,sig_frm_steerWeights,sig_ft_idxFtToFrm)
@@ -209,4 +226,4 @@ def demo3_procedural():
 #    plt.xlabel('Frame #')
 #    plt.ylabel('Channel #')
     
-    return sig_smp_wavIn, sig_smp_wavScaled, sig_smp_wavPre,sig_smp_wavAgc, sig_smp_gainAgc,sig_frm_audBuffers,sig_frm_fft,sig_frm_hilbert,sig_frm_energy,sig_frm_gainCv,sig_3frm_fft
+    return sig_smp_wavIn, sig_smp_wavScaled, sig_smp_wavPre,sig_smp_wavAgc, sig_smp_gainAgc,sig_frm_audBuffers,sig_frm_fft,sig_frm_hilbert,sig_frm_energy,sig_frm_gainCv,sig_3frm_fft,sig_3frm_peakFreq,sig_3frm_peakLoc,sig_frm_peakFreq,sig_frm_peakLoc

@@ -36,8 +36,17 @@ def hilbertEnvelopeFunc(par,X):
     upperBound = par['outputUpperBound']
     lowerBound = par['outputLowerBound']
     
-    X[np.arange(0,X.shape[0]-1,2),:] = -X[np.arange(0,X.shape[0]-1,2),:];
-    L = X.shape[1]
+
+    Y = np.zeros(X.shape,dtype=complex);
+    
+    
+    Y[np.arange(0,X.shape[0]-1,2),:] = -X[np.arange(0,X.shape[0]-1,2),:];
+    Y[np.arange(0,X.shape[0]-1,2)+1,:] = X[np.arange(0,X.shape[0]-1,2)+1,:];
+    
+
+    
+
+    L = Y.shape[1]
     env = np.zeros((nChan,L))
     envNoLog = np.zeros((nChan,L))
     currentBin = startBin-1; # correcting for matlab base-1 indexing;
@@ -50,12 +59,12 @@ def hilbertEnvelopeFunc(par,X):
     
     for i in np.arange(nChan):
         for j in np.arange(numFullFrqBin[i]):
-            sr = np.sum(np.real(X[currentBin:currentBin+4,:]),axis=0)
-            si = np.sum(np.imag(X[currentBin:currentBin+4,:]),axis=0)
+            sr = np.sum(np.real(Y[currentBin:currentBin+4,:]),axis=0)
+            si = np.sum(np.imag(Y[currentBin:currentBin+4,:]),axis=0)
             env[i,:] = env[i,:]+sr**2+si**2
             currentBin +=4 
-        sr = np.sum(np.real(X[currentBin:currentBin+numPartFrqBin[i],:]),axis = 0)
-        si = np.sum(np.imag(X[currentBin:currentBin+numPartFrqBin[i],:]),axis = 0)
+        sr = np.sum(np.real(Y[currentBin:currentBin+numPartFrqBin[i],:]),axis = 0)
+        si = np.sum(np.imag(Y[currentBin:currentBin+numPartFrqBin[i],:]),axis = 0)
         
         env[i,:] = env[i,:]+sr**2+si**2
         

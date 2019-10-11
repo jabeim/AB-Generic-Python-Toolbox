@@ -9,7 +9,7 @@ import numpy as np
 def fftFilterbankFunc(par,buf):
     nFft = par['parent']['nFft']
     X = np.fft.fft(buf,nFft,axis=0)
-    
+       
     if par['combineDcNy']:
         NF = X[nFft//2+1,:];
         DC = X[0,:];
