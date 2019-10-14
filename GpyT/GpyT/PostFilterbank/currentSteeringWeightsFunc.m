@@ -70,7 +70,7 @@ for iCh = 1:nChan
     
     % map [0,1] to actual specified steering range (contained in [0,1])
     weightHi = range(1, iCh) + weightHiRaw*diff(range(:, iCh));
-    weightHi2 = weightHi'
+    weightHi2 = weightHi';
     weights(iCh, :) = 1 - weightHi; 
     weights(iCh + nChan, :) = weightHi;
 end

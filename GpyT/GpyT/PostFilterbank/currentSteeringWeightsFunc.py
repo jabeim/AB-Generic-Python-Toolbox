@@ -36,8 +36,7 @@ def currentSteeringWeightsFunc(par,loc):
         if nSteps == 1:
             weightHiRaw = 0.5
         elif nSteps > 1:
-            weightHiRaw = np.round(weightHiRaw*(nSteps-1))/(nSteps-1)  # python rounding is different than matlab rounding, will need additional solution to solve for round towards even instead of round away from 0
-            
+            weightHiRaw = np.floor(weightHiRaw*(nSteps-1)+0.5)/(nSteps-1)  # add +.5 and use floor to force round-half-away-from-zero (python round uses round-half-towards-even), only works for positive values 
         weightHi = steeringRange[0,iCh]+weightHiRaw*np.diff(steeringRange[:,iCh])
 
         weights[iCh,:] = 1-weightHi

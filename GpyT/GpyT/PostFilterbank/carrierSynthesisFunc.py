@@ -21,18 +21,18 @@ def carrierSynthesisFunc(par,fPeak):
     nFtFrame = np.ceil(durFrame*nFrame/durStimCycle)-1
     tFtFrame = np.arange(nFtFrame)*durStimCycle
     
-    idxAudFrame = np.floor(tFtFrame/durFrame)+1
+    idxAudFrame = (np.floor(tFtFrame/durFrame)).astype(int) # +1 removed for 0 based indexing
     fPeakPerFtFrame = fPeak[:,idxAudFrame]
     
-    deltaPhiNorm = np.min([fPeakPerFtFrame/rateFt,0.5*2])
+    deltaPhiNorm = np.minimum(fPeakPerFtFrame/rateFt,0.5*2)
     phiNorm = np.mod(np.cumsum(deltaPhiNorm,axis=1),1)
     
     maxMod = par['maxModDepth']
     fModOn = rateFt*par['fModOn']
     fModOff = rateFt*par['fModOff']
-    modDepth = maxMod*(fModOff-np.min([np.max([fPeakPerFtFrame,fModOn]),fModOff]))/(fModOff-fModOn)
+    modDepth = maxMod*(fModOff-np.minimum(np.maximum(fPeakPerFtFrame,fModOn),fModOff))/(fModOff-fModOn)
     
-    carrier = 1-(modDepth*phiNorm < 0.5)
+    carrier = 1-(modDepth*(phiNorm < 0.5))
     
     tFtFrame = idxAudFrame
     

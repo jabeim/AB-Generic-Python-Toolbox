@@ -30,9 +30,8 @@ def f120MappingFunc(par,carrier,env,weights,idxAudioFrame):
     for iChan in np.arange(nChan):
         iElLo = chanToEl[iChan]
         iElHi = iElLo+1
-        iAmpLo = iElLo*2-1
+        iAmpLo = iElLo*2    # remove+1 for 0 base indexing
         iAmpHi = iAmpLo+1
-        
         if carrierMode == 0:
             mappedLo = mapA[iElLo]*env[iChan,idxAudioFrame]+mapK[iElLo]
             mappedHi = mapA[iElHi]*env[iChan,idxAudioFrame]+mapK[iElHi]
@@ -43,8 +42,8 @@ def f120MappingFunc(par,carrier,env,weights,idxAudioFrame):
             mappedLo = (mapA[iElLo]*env[iChan,idxAudioFrame]+mapK[iElLo])*carrier[iChan,:]
             mappedHi = (mapA[iElHi]*env[iChan,idxAudioFrame]+mapK[iElHi])*carrier[iChan,:]
             
-        mappedLo = np.max([np.min([mappedLo,mapClip[iElLo]]),0])
-        mappedHi = np.max([np.min([mappedLo,mapClip[iElHi]]),0])
+        mappedLo = np.maximum(np.minimum(mappedLo,mapClip[iElLo]),0)
+        mappedHi = np.maximum(np.minimum(mappedLo,mapClip[iElHi]),0)
         
         ampWords[iAmpLo,:] = mappedLo*weights[iChan,idxAudioFrame]
         ampWords[iAmpHi,:] = mappedHi*weights[iChan+nChan,idxAudioFrame]

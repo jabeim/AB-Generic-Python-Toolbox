@@ -85,4 +85,4 @@ for iChan = 1:nChan
     ampWords(iAmpLo, :) = mappedLo .* weights(iChan, idxAudioFrame);
     ampWords(iAmpHi, :) = mappedHi .* weights(iChan + nChan, idxAudioFrame);
 end
-
+disp('end')

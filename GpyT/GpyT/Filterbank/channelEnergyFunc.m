@@ -67,4 +67,6 @@ function [engy] = channelEnergyFunc(par, X, gAgc)
         gAgc = max(gAgc, eps); % avoid devide-by-zero
         engy = bsxfun(@rdivide, engy, gAgc); % divide each row (channel) of engy by AGC gain vector
     end
+    
 end
+

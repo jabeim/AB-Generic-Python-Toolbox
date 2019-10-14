@@ -8,7 +8,7 @@ import numpy as np
 
 def channelEnergyFunc(par,X,gAgc):
     strat = par['parent'];
-    startBin = strat['startBin']
+    startBin = strat['startBin']-1 # subtract 1 for python indexing
     nBinLims = strat['nBinLims'];
     nHop = strat['nHop']
     
