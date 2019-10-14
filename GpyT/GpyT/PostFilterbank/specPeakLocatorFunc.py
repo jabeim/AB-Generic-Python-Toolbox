@@ -5,7 +5,7 @@ Created on Fri Sep  6 15:22:02 2019
 @author: beimx004
 """
 import numpy as np
-from scipy.io import loadmat
+#from scipy.io import loadmat
 
 def specPeakLocatorFunc(par,stftIn):
     strat = par['parent']
@@ -28,9 +28,9 @@ def specPeakLocatorFunc(par,stftIn):
     PSD = np.real(stftIn*np.conj(stftIn))/2
     PSD = np.maximum(PSD,10**(-120/20))
     
-    PSD_data = loadmat('C:/Users/beimx004/Documents/GitHub/hackathon_simulator/GpyT/GpyT/sig_3frm_PSD.mat')
-    
-    PSD = PSD_data['PSD']
+#    PSD_data = loadmat('C:/Users/beimx004/Documents/GitHub/hackathon_simulator/GpyT/GpyT/sig_3frm_PSD.mat')
+#    
+#    PSD = PSD_data['PSD']
     
     currentBin = startBin-1  # account for matlab indexing
     

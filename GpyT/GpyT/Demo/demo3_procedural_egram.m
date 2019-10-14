@@ -198,7 +198,7 @@ sig_frm_steerWeights                    = currentSteeringWeightsFunc(par_steer, 
 sig_ft_ampWords                         = f120MappingFunc(par_mapper, sig_ft_carrier, ... % combine envelepes, carrier and current steering weights, compute current outputs
                                             sig_frm_hilbertMod, sig_frm_steerWeights, sig_ft_idxFtToFrm); 
 
-f120ElectrodogramFunc(par_egram, sig_ft_ampWords);  % plot electrogram
+elGram = f120ElectrodogramFunc(par_egram, sig_ft_ampWords);  % plot electrogram
 
 
 %% Display CV gains

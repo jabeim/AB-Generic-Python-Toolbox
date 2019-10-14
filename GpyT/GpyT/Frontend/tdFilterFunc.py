@@ -16,12 +16,7 @@ def tdFilterFunc(par,x):
     elif coeffDimensions == 2:
         nCh = par['coeffNum'].shape[0]
     else:
-        raise ValueError('Filter coefficients must be organized in a vector or 2d matrix!')
-
-    
-    
-    
-    
+        raise ValueError('Filter coefficients must be organized in a vector or 2d matrix!')   
     
     if nCh > 1:
         Y = np.zeros((nCh,x.size))

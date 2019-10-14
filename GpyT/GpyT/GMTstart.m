@@ -23,6 +23,7 @@ addpath([GMTROOT, filesep, 'Agc']);
 addpath([GMTROOT, filesep, 'Clearvoice']);
 addpath([GMTROOT, filesep, 'CsViewer']);
 addpath([GMTROOT, filesep, 'Demo']);
+addpath([GMTROOT, filesep, 'Electrodogram']);
 addpath([GMTROOT, filesep, 'Filterbank']);
 addpath([GMTROOT, filesep, 'Framework']);
 addpath([GMTROOT, filesep, 'Frontend']);

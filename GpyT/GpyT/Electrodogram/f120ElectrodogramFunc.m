@@ -81,7 +81,7 @@ function elGram = f120ElectrodogramFunc(par, ampIn)
         elGram = elGram*1e-6 * rOut;  %  [A * Ohm]
     end
     
-    elGram = sparse(elGram); % make sparse and 'horizontal'
+%     elGram = sparse(elGram); % make sparse and 'horizontal'
     
     if par.enablePlot 
         figure;

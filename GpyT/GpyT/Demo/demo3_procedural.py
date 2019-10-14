@@ -24,8 +24,8 @@ from PostFilterbank.specPeakLocatorFunc import specPeakLocatorFunc
 from PostFilterbank.currentSteeringWeightsFunc import currentSteeringWeightsFunc
 from PostFilterbank.carrierSynthesisFunc import carrierSynthesisFunc
 from Mapping.f120MappingFunc import f120MappingFunc
-from Plotting.plotF120ElectrodogramFunc import plotF120ElectrodogramFunc
-
+#from Plotting.plotF120ElectrodogramFunc import plotF120ElectrodogramFunc
+from Electrodogram.f120ElectrodogramFunc import f120ElectrodogramFunc
 
 
 
@@ -164,21 +164,31 @@ def demo3_procedural():
             'carrierMode' : 1
             }
     
-    parPlotter = {
+#    parPlotter = {
+#            'parent' : parStrat,
+#            'pairOffset' : np.array([1,5,9,13,2,6,10,14,3,7,11,15,4,8,12])-1,
+#            'timeUnits' : 'ms',
+#            'xTickInterval' : 250,
+#            'pulseColor' : 'r',
+#            'enable' : True
+#            }
+    
+    parElectrodogram = {
             'parent' : parStrat,
-            'pairOffset' : np.array([1,5,9,13,2,6,10,14,3,7,11,15,4,8,12])-1,
-            'timeUnits' : 'ms',
-            'xTickInterval' : 250,
-            'pulseColor' : 'r',
-            'enable' : True
+            'cathodicFirst' : True,
+            'channelOrder' : np.array([1,5,9,13,2,6,10,14,3,7,11,15,4,8,12]),
+            'colorScheme' : 4,
+            'enablePlot' : True,
+            'outputFs' : 200e3,
+            'resistance' : 10e3
             }
+    
     
     
     results = {}
     # read specified wav file and scale
-#    sig_smp_wavIn = readWavFunc(parReadWav)
-    results['sig_smp_wavIn'] = readMatFunc(parReadWav)     # read the resampled data from matlab script to ensure equivalence for debugging
-    
+#    results['sig_smp_wavIn'] = readWavFunc(parReadWav)
+    results['sig_smp_wavIn'] = readMatFunc(parReadWav)     # read the resampled data from matlab script to ensure equivalence for debugging  
     results['sig_smp_wavScaled'] = results['sig_smp_wavIn']/np.sqrt(np.mean(results['sig_smp_wavIn']**2))*10**((65-111.6)/20) # set level to 65 dB SPL (assuming 111.6 dB full-scale)
     
     # apply preemphasis
@@ -212,9 +222,13 @@ def demo3_procedural():
     results['sig_ft_ampWords'] = f120MappingFunc(parMapper,results['sig_ft_carrier'],                             # combine envelopes, carrier, current steering weights and compute outputs
                                       results['sig_frm_hilbertMod'],results['sig_frm_steerWeights'],results['sig_ft_idxFtToFrm'] )
     
+    results['elGram'] = f120ElectrodogramFunc(parElectrodogram,results['sig_ft_ampWords'])
     
-#    plotF120ElectrodogramFunc(parPlotter,sig_ft_ampWords)  # plot electrodogram REPLACE WITH THE NEW SCOPE FUNCTION
+    matElGramData = loadmat('C:/Users/beimx004/Documents/GitHub/hackathon_simulator/GpyT/GpyT/elGram.mat')
+    elGramGMT = matElGramData['elGram']
 #    
+    results['finalDeviation'] = results['elGram']-elGramGMT
+    
 #    # diplay CV gains
 #    plt.figure()
 #    G = sig_frm_gainCv*3.01
