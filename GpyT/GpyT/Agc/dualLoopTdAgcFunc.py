@@ -107,29 +107,40 @@ def dualLoopTdAgcFunc(par,wavIn,*args):
     nFrame = np.ceil(nSamp/decFact).astype(int);
     
     # preallocation 
-    Env = np.empty(nFrame);
-    CSlow = np.empty(nFrame);
-    CFast = np.empty(nFrame);
-    C = np.empty(nFrame);
-    G = np.empty(nFrame);
-    Hold = np.empty(nFrame);
-    State = np.empty(nFrame);
-    EnvFast = np.empty(nFrame);
+    agc = {}
+    
+    agc['Env'] = np.empty(nFrame);
+    agc['CSlow'] = np.empty(nFrame);
+    agc['CFast'] = np.empty(nFrame);
+    agc['C'] = np.empty(nFrame);
+    agc['G'] = np.empty(nFrame);
+    agc['Hold'] = np.empty(nFrame);
+    agc['State'] = np.empty(nFrame);
+    agc['EnvFast'] = np.empty(nFrame);
+    
     # inital conditions
     cSlow_i = par['cSlowInit']
-    if not cSlow_i:
-        cSlow_i = np.min((1,np.mean(np.abs(ctrl))*np.sum(envCoefs)))
+    if isinstance(cSlow_i,np.ndarray) or isinstance(cSlow_i,list):
+        if len(cSlow_i) == 0:
+            cSlow_i = np.minimum(np.mean(np.abs(ctrl))*np.sum(envCoefs),1)
     cFast_i = par['cFastInit']
-    if not cFast_i:
-        cFast_i = np.min([1,np.mean(np.abs(ctrl))*np.sum(envCoefs)*fastHdrm])
+    if isinstance(cFast_i,np.ndarray) or isinstance(cFast_i,list):
+        if len(cFast_i) == 0:
+            cFast_i = np.minimum(np.mean(np.abs(ctrl))*np.sum(envCoefs)*fastHdrm,1)
+    
     cFastLowLimit_i = cFast_i;
     hold_i = 0;
     
     # loop over blocks
     for iFrame in np.arange(nFrame):
-        idxWav = iFrame+1*decFact+np.arange(-(envBufLen-1),0)-1;
+        idxWav = (iFrame+1)*decFact+np.arange(-(envBufLen),0)-1;
+        
         idxWav = idxWav[idxWav>=0];
-        idxWav = idxWav[idxWav <=nSamp];
+        idxWav = idxWav[idxWav < nSamp];
+        
+#        if idxWav[0] > 6290:
+#            print('divergence')
+    
         
         # compute envelope
         env_i = np.sum(np.abs(ctrl[0,idxWav])*envCoefs[-idxWav.size:]);   # Use only first channel wavform needs to be single channel at this state
@@ -169,39 +180,41 @@ def dualLoopTdAgcFunc(par,wavIn,*args):
         c_i_log2 = np.log2(max((c_i,10**-16)));
         g_i = 2**(g0+gainSlope*max((c_i_log2-c0_log2,0)));
 
-        G[iFrame] = g_i;
+        agc['G'][iFrame] = g_i;
         
-        Env[iFrame] = env_i;
-        C[iFrame] = c_i;
-        CSlow[iFrame] = cSlow_i;
-        CFast[iFrame] = cFast_i;
-        Hold[iFrame] = hold_i;
-        State[iFrame] = state_i;
-        EnvFast[iFrame] = envFast_i;
+        agc['Env'][iFrame] = env_i;
+        agc['C'][iFrame] = c_i;
+        agc['CSlow'][iFrame] = cSlow_i;
+        agc['CFast'][iFrame] = cFast_i;
+        agc['Hold'][iFrame] = hold_i;
+        agc['State'][iFrame] = state_i;
+        agc['EnvFast'][iFrame] = envFast_i;
     
     # apply gain
     
     
     idxExpand = np.concatenate((np.ceil(np.arange(1/decFact,nFrame+1/decFact,1/decFact)),np.array([nFrame]))).astype(int)
-    GExpand = G[idxExpand-1];
-    GExpand = signal.lfilter(np.ones(gainBufLen)/gainBufLen,1,GExpand)
+    agc['smpGain'] = agc['G'][idxExpand-1];
+    agc['smpGain']  = signal.lfilter(np.ones(gainBufLen)/gainBufLen,1,agc['smpGain'] )
     
-    GExpand = GExpand[1:nSamp+2-gainBufLen];
-    GExpand = GExpand.reshape((1,GExpand.size))
+    agc['smpGain']  = agc['smpGain'] [1:nSamp+2-gainBufLen];
+    agc['smpGain']  = agc['smpGain'] .reshape((1,agc['smpGain'] .size))
         
-    wavOut = np.concatenate((np.zeros((1,envBufLen)),wavIn[:,gainBufLen:nSamp-envBufLen+1]),axis=1)*GExpand
-    wavOut = wavOut.reshape((1,wavOut.size))
+    agc['wavOut'] = np.concatenate((np.zeros((1,envBufLen)),wavIn[:,gainBufLen:nSamp-envBufLen+1]),axis=1)*agc['smpGain']
+    agc['wavOut'] = agc['wavOut'].reshape((1,agc['wavOut'].size))
     
     if par['clipMode'].lower() == 'none':
         pass
     elif par['clipMode'].lower() == 'limit':
-        wavOut = np.maximum(-1,np.minimum(1,wavOut));
+        agc['wavOut'] = np.maximum(-1,np.minimum(1,agc['wavOut']));
     elif par['clipMode'].lower() == 'overflow':
-        wavOut = np.mod(1+wavOut,2)-1
+        agc['wavOut'] = np.mod(1+agc['wavOut'],2)-1
     else:
         warn('Unknown clipping mode: '+par['clipMode']+' . Using ''none'' instead.')
         
-    return wavOut,GExpand,State,C,CSlow,CFast,Hold,Env,G,EnvFast
+        
+    return agc    
+#    return wavOut,GExpand,State,C,CSlow,CFast,Hold,Env,G,EnvFast
 #        return wavOut,GExpand
     
     

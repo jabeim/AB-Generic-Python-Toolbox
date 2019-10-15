@@ -1,4 +1,4 @@
-function [wavOut GExpand State C CSlow CFast Hold Env G EnvFast] = dualLoopTdAgcFunc(par, wavIn, ctrl)
+function agc = dualLoopTdAgcFunc(par, wavIn, ctrl)
 % [wavOut GExpand State C CSlow CFast Hold Env G EnvFast] = dualLoopTdAgcFunc(par, wavIn, [ctrl])
 % 
 % Apply the (single-channel) Harmony time-domain dual-loop AGC to input. 
@@ -101,14 +101,14 @@ nSamp = length(ctrl);
 nFrame = ceil(nSamp / decFact);
 
 % pre-allocate variables (output time series)
-Env = NaN(1, nFrame);
-CSlow = NaN(1,nFrame);
-CFast = NaN(1,nFrame);
-C = NaN(1,nFrame);
-G = NaN(1,nFrame);
-Hold = NaN(1,nFrame);
-State = NaN(1,nFrame);
-EnvFast = NaN(1,nFrame);
+agc.Env = NaN(1, nFrame);
+agc.CSlow = NaN(1,nFrame);
+agc.CFast = NaN(1,nFrame);
+agc.C = NaN(1,nFrame);
+agc.G = NaN(1,nFrame);
+agc.Hold = NaN(1,nFrame);
+agc.State = NaN(1,nFrame);
+agc.EnvFast = NaN(1,nFrame);
 
 % Initial conditions
 cSlow_i = par.cSlowInit; % slow envelope
@@ -128,6 +128,10 @@ for iFrame = 1:nFrame
     idxWav = (iFrame)*decFact + (-(envBufLen-1):0) - 1; % -1 gives match apparent match with c-model...
     idxWav = idxWav(( idxWav > 0) & (idxWav <= nSamp) );
 
+%     if idxWav(1) > 6290
+%         disp('divergence')
+%     end
+    
     % compute envelope
     env_i = sum( abs(ctrl(idxWav)) .* envCoefs((end-length(idxWav)+1):end) );
     envFast_i = clip1( env_i * fastHdrm );
@@ -173,32 +177,32 @@ for iFrame = 1:nFrame
     g_i = 2^(g0  +  gainSlope * max((c_i_log2 - c0_log2), 0));
     
     % store variables
-    G(iFrame) = g_i;
-    Env(iFrame) = env_i;
-    C(iFrame) = c_i;
-    CSlow(iFrame) = cSlow_i;
-    CFast(iFrame) = cFast_i;
-    Hold(iFrame) = hold_i;
-    State(iFrame) = state_i;
-    EnvFast(iFrame) = envFast_i;
+    agc.G(iFrame) = g_i;
+    agc.Env(iFrame) = env_i;
+    agc.C(iFrame) = c_i;
+    agc.CSlow(iFrame) = cSlow_i;
+    agc.CFast(iFrame) = cFast_i;
+    agc.Hold(iFrame) = hold_i;
+    agc.State(iFrame) = state_i;
+    agc.EnvFast(iFrame) = envFast_i;
 end
 
 % apply gain:
 idxExpand = [ ceil( (1/decFact) : (1/decFact) : nFrame) nFrame];
-GExpand = G(idxExpand); % expand decimated gain vector
-GExpand = filter(ones(1,gainBufLen)/gainBufLen, 1, GExpand); % average over gain window
-GExpand = GExpand(2:nSamp+2-gainBufLen);
-wavOut = [zeros(1, envBufLen), wavIn(gainBufLen+1:nSamp-envBufLen+1)] .* GExpand; % apply gain
+agc.smpGain = agc.G(idxExpand); % expand decimated gain vector
+agc.smpGain = filter(ones(1,gainBufLen)/gainBufLen, 1, agc.smpGain); % average over gain window
+agc.smpGain = agc.smpGain(2:nSamp+2-gainBufLen);
+agc.wavOut = [zeros(1, envBufLen), wavIn(gainBufLen+1:nSamp-envBufLen+1)] .* agc.smpGain; % apply gain
 
 switch lower(par.clipMode)
     case 'none'
         % do nothing, i.e. allow values outside [-1, +1]
     case 'limit'
         % limit to [-1, +1]
-        wavOut = max(-1, min(1, wavOut));
+       agc.wavOut = max(-1, min(1, agc.wavOut));
     case 'overflow'
         % overflow within the ring [-1, +1]
-        wavOut = mod( 1 + wavOut, 2) - 1;
+        agc.wavOut = mod( 1 + agc.wavOut, 2) - 1;
     otherwise
         warning('Unknown clipping mode ''%s''. Using ''none'' instead.', par.clipMode);
 end

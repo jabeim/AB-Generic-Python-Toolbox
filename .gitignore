@@ -121,3 +121,6 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+GpyT/GpyT/GMTresults.mat
+GpyT/GpyT/GpyTdata.mat
+GpyT/GpyT/GMTresults.mat
