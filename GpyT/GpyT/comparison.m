@@ -19,12 +19,10 @@ for i = 1:length(varList)-2
 
         if size(pyComp.(varList{i}),1) == 1 && sum(pyComp.(varList{i})) ~= 0
             figure('Name',varList{i})
-
             hold on
             plot(matData.(varList{i}),'r--')
             plot(pyData.(varList{i}),'b:')
             plot(pyComp.(varList{i}),'k')
-
             hold off
         end
     end
