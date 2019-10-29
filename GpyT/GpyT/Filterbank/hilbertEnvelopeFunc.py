@@ -31,8 +31,8 @@ def hilbertEnvelopeFunc(par,X):
     
     strat = par['parent'];
     nChan = strat['nChan'];
-    startBin = strat['startBin'];    
-    nBinLims = strat['nBinLims'];
+    startBin = strat['startBin']-1;    # correcting for matlab base-1 indexing
+    nBinLims = strat['nBinLims'];    # correcting for matlab base-1 indexing
     upperBound = par['outputUpperBound']
     lowerBound = par['outputLowerBound']
     
@@ -41,6 +41,7 @@ def hilbertEnvelopeFunc(par,X):
     
     
     Y[np.arange(0,X.shape[0]-1,2),:] = -X[np.arange(0,X.shape[0]-1,2),:];
+    
     Y[np.arange(0,X.shape[0]-1,2)+1,:] = X[np.arange(0,X.shape[0]-1,2)+1,:];
     
 
@@ -49,7 +50,7 @@ def hilbertEnvelopeFunc(par,X):
     L = Y.shape[1]
     env = np.zeros((nChan,L))
     envNoLog = np.zeros((nChan,L))
-    currentBin = startBin-1; # correcting for matlab base-1 indexing;
+    currentBin = startBin; 
     
     numFullFrqBin = np.floor(nBinLims/4);
     numPartFrqBin = np.mod(nBinLims,4);
@@ -74,7 +75,7 @@ def hilbertEnvelopeFunc(par,X):
         if nBinLims[i] > logCorrect.size-1:
             env[i,:] = env[i,:] +logCorrect[-1:]
         else:
-            env[i,:] = env[i,:]+logCorrect[nBinLims[i]];
+            env[i,:] = env[i,:]+logCorrect[nBinLims[i]-1];   # correcting here for matlab base-1 indexing
         currentBin+= numPartFrqBin[i]
     
     ix = ~np.isfinite(env)

@@ -52,6 +52,7 @@ for i = 1:nChan
 %     disp([bin bin+numpartFrqBin(i)-1])
     sr = sum(real(X(bin:bin + numpartFrqBin(i) - 1, :)), 1);
     si = sum(imag(X(bin:bin + numpartFrqBin(i) - 1, :)), 1);
+    
     env(i, :) = env(i, :) + (sr.^2) + (si.^2);
     envNoLog(i, :) = env(i, :);
     env(i, :) = log2(env(i, :));

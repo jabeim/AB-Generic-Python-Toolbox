@@ -28,12 +28,14 @@ function b = winBufFunc(par, signalIn)
 %  14 Aug 2019, PH - swapped function arguments
 strat = par.parent;
 
-[M, N] = size(signalIn)
+[M, N] = size(signalIn);
 if N>M
 %    warning('winBufFun: input signal wider than long (%dx%d). Transposing.', M, N);
     signalIn = signalIn.';
     N=M;
 end
+
+signalIn = (1:length(signalIn))';
 
 b = buffer(signalIn(:, 1), strat.nFft, strat.nFft-strat.nHop, par.bufOpt);
 b = bsxfun(@times, b, strat.window);
@@ -47,3 +49,4 @@ if N>1
         b(:, :, n) = bsxfun(@times, b(:, :, n), strat.window);
     end
 end
+disp('end')

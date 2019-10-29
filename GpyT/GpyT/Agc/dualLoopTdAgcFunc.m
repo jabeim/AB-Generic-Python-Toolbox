@@ -133,6 +133,9 @@ for iFrame = 1:nFrame
 %     end
     
     % compute envelope
+    
+    envLen = length(envCoefs((end-length(idxWav)+1):end));
+    envWin = envCoefs((end-length(idxWav)+1:end));
     env_i = sum( abs(ctrl(idxWav)) .* envCoefs((end-length(idxWav)+1):end) );
     envFast_i = clip1( env_i * fastHdrm );
     
