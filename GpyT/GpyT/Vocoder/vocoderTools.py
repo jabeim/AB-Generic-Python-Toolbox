@@ -85,7 +85,7 @@ def NeurToBinMatrix(neuralLocsOct,nFFT,Fs):
         I[k] = np.argmin(tmp)
         mNeurToBin[I[k].astype(int),k] = 1
         
-    pFN = 'Vocoder/preemph.mat'
+    pFN = 'MatlabSupportFiles/preemph.mat'
     emph = sp.io.loadmat(pFN)
     
     I = np.argmax(emph['emphDb'])

@@ -7,13 +7,11 @@ Created on Mon Apr 22 11:29:54 2019
 import numpy as np
 import scipy as sp
 import scipy.io as sio
-from mat4py import loadmat as loadmatstruct
-from scipy.io.wavfile import write as wavwrite
-from .vocoder_tools import ActivityToPower, NeurToBinMatrix, generate_cfs
+from .vocoderTools import ActivityToPower, NeurToBinMatrix, generate_cfs
 
 
 
-def vocoder(fileName,**kwargs):
+def vocoderFunc(electrodogram,**kwargs):
     captFs = kwargs.get('captFs',200000)
     nCarriers = kwargs.get('nCarriers',20)   
     elecFreqs = kwargs.get('elecFreqs',None)
@@ -31,29 +29,11 @@ def vocoder(fileName,**kwargs):
     
     
     
-#%% Load .matfile of electrode recording and format data    
-#    matData = sio.loadmat(fileName)
+#%% Scale and preprocess electrodogram data 
     scaletoMuA = 1000/resistorValue
-    
-    if isinstance(fileName,str): 
-        matData = loadmatstruct('Hackathon_scope_demo/'+fileName+'.scope')
-        matData = matData['S']
-        electrodeAmp = np.array(matData['electrodeAmp'])
-        captFs = float(matData['SampleRate'])
-        outFileName = kwargs.get('outFileName','Hackathon_scope_demo/'+fileName+'hybrid_voc.wav')
-        nElec = electrodeAmp.shape[0]-1
-        elData = np.flipud(electrodeAmp[1:,:])*scaletoMuA
-    elif isinstance(fileName,np.ndarray):
-        electrodeAmp = fileName
-        outFileName = kwargs.get('outFileName','Hackathon_scope_demo/TEST_hybrid_voc.wav')
-        nElec = electrodeAmp.shape[0]
-        elData = electrodeAmp*scaletoMuA
-        
-        
-        
-    
-    
-    
+    electrodeAmp = electrodogram
+    nElec = electrodeAmp.shape[0]
+    elData = electrodeAmp*scaletoMuA
     captTs = 1/captFs
 
     
@@ -68,7 +48,7 @@ def vocoder(fileName,**kwargs):
 # load electric field spread data
     if spread is None:
         elecPlacement = np.zeros(nElec).astype(int) # change to zeros to reflect python indexing
-        spreadFile = 'Vocoder/spread.mat'
+        spreadFile = 'MatlabSupportFiles/spread.mat'
         spread = sio.loadmat(spreadFile)
     else: # This seciont may need reindexing if the actual spread mat data is passed through, for now let use the spread.mat data
         elecPlacement = spread['elecPlacement']
@@ -127,13 +107,8 @@ def vocoder(fileName,**kwargs):
     else:
         tPlay = np.ceil(tPlay/tWin)*tWin
         
-# create output file name
-# this section seems matlab specific and may not be needed    
-# store original audio for comparison
-# this section rescales the presumed pulse audio for comparison
         
 # create matrix to convert electrode charge to electric field
-
     charge2EF = np.zeros((nNeuralLocs,nElec))
     elecFreqOct = np.log2(elecFreqs)
     
@@ -150,17 +125,12 @@ def vocoder(fileName,**kwargs):
 # here we call another function
     mNeurToBin = NeurToBinMatrix(neuralLocsOct,nFFT,audioFs)
 
-# window shape
-    win = .5-.5*np.cos(2*np.pi*np.arange(0,nFFT)/(nFFT-1))
+
     
 # %% other auxilliary variables
-       
+    
 #    random phase
     phs = 2*np.pi*np.random.rand(np.floor(nFFT/2).astype(int))
-    # prededfined random phase
-#    phsDat = sio.loadmat('phs.mat')  # load predefined random phase for comparison
-#    phs = phsDat['phs'][:,0]    
-    dphi = 2*np.pi*np.arange(1,np.floor(nFFT/2)+1)*nAvg/nFFT
     
     audioPwr = np.zeros((nNeuralLocs,blkSize+1))
     
@@ -189,7 +159,7 @@ def vocoder(fileName,**kwargs):
 #        tones[:,toneNum] = np.sin(2.*np.pi*toneFreqs[toneNum]*t)               # sine phase
       
     interpSpect = np.zeros((nCarriers,np.floor(elData.shape[1]/blkSize).astype(int)),dtype=complex)
-# electrode data cleaning??
+# electrode data cleaning
     for iChan in np.arange(0,elData.shape[0]):
         for iTime in np.arange(1,elData.shape[1]):
             if elData[iChan,iTime-1] > 5 and elData[iChan,iTime] > 5:
@@ -207,7 +177,7 @@ def vocoder(fileName,**kwargs):
         electricField = np.maximum(0,efData)
         
         # Normalized EF to neural activity
-#        nl = 5    
+
 #        electricField = electricField/ 0.4
         activity = np.maximum(0,np.minimum(np.exp(-nl+nl*electricField),1)-np.exp(-nl))/(1-np.exp(-nl))
         
@@ -243,10 +213,6 @@ def vocoder(fileName,**kwargs):
        
     audioOut = np.sum(modTones,axis=0)
 
-#    audioNorm = audioOut
-#    wavData = (audioNorm*(2**32-1)).astype(np.int32) 
-#    wavwrite(outFileName,audioFs.astype(int),wavData)
-# Return wavdata
      
            
     return(audioOut,audioFs.astype(int))

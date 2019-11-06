@@ -7,12 +7,10 @@ Created on Wed Sep 18 14:55:51 2019
 # Import necessary functions
 import numpy as np
 from scipy.io import loadmat
-import matplotlib.pyplot as plt
 
-from Frontend.readWavFunc import readWavFunc
 
+#from Frontend.readWavFunc import readWavFunc
 from Frontend.readMatFunc import readMatFunc
-
 from Frontend.tdFilterFunc import tdFilterFunc
 from Agc.dualLoopTdAgcFunc import dualLoopTdAgcFunc
 from WinBuf.winBufFunc import winBufFunc
@@ -24,15 +22,14 @@ from PostFilterbank.specPeakLocatorFunc import specPeakLocatorFunc
 from PostFilterbank.currentSteeringWeightsFunc import currentSteeringWeightsFunc
 from PostFilterbank.carrierSynthesisFunc import carrierSynthesisFunc
 from Mapping.f120MappingFunc import f120MappingFunc
-#from Plotting.plotF120ElectrodogramFunc import plotF120ElectrodogramFunc
 from Electrodogram.f120ElectrodogramFunc import f120ElectrodogramFunc
-from Vocoder.ab_spiral import vocoder as vocoderFunc
+from Vocoder.vocoderFunc import vocoderFunc
 
 
 
 def demo3_procedural():
     
-    matWindow = loadmat('C:/Users/beimx004/Documents/GitHub/hackathon_simulator/GpyT/GpyT/WinBuf/windowData.mat')
+    matWindow = loadmat('MatlabSupportFiles/windowData.mat')
     stratWindow = matWindow['winData'].T
     
 #    stratWindow = 0.5*(np.blackman(256)+np.hanning(256))
@@ -52,7 +49,7 @@ def demo3_procedural():
     
     parReadWav = {
             'parent' : parStrat,
-            'wavFile' : 'C:/Users/beimx004/Documents/GitHub/hackathon_simulator/GpyT/GpyT/Sounds/AzBio_3sent.wav',
+            'wavFile' : 'Sounds/AzBio_3sent.wav',
             'tStartEnd' : [],
             'iChannel' : 1,
             }
@@ -168,15 +165,6 @@ def demo3_procedural():
             'carrierMode' : 1
             }
     
-#    parPlotter = {
-#            'parent' : parStrat,
-#            'pairOffset' : np.array([1,5,9,13,2,6,10,14,3,7,11,15,4,8,12])-1,
-#            'timeUnits' : 'ms',
-#            'xTickInterval' : 250,
-#            'pulseColor' : 'r',
-#            'enable' : True
-#            }
-    
     parElectrodogram = {
             'parent' : parStrat,
             'cathodicFirst' : True,
@@ -187,66 +175,41 @@ def demo3_procedural():
             'resistance' : 10e3
             }
     
-    gmtData = loadmat('C:/Users/beimx004/Documents/GitHub/hackathon_simulator/GpyT/GpyT/GMTresults.mat')
+
+    results = {} #initialize demo results structure
     
-    results = {}
-    
-    comparison = {}
+
     # read specified wav file and scale
-    results['sig_smp_wavIn'] = readWavFunc(parReadWav)
-#    results['sig_smp_wavIn'] = readMatFunc(parReadWav)     # read the resampled data from matlab script to ensure equivalence for debugging  
-    
-#    comparison['sig_smp_wavIn'] = results['sig_smp_wavIn']-gmtData['sig_smp_wavIn'].T
+#    results['sig_smp_wavIn'] = readWavFunc(parReadWav)     # load the file specified in parReadWav
+    results['sig_smp_wavIn'] = readMatFunc(parReadWav)     # read the resampled data from matlab script to ensure equivalence for debugging  
     
     
     results['sig_smp_wavScaled'] = results['sig_smp_wavIn']/np.sqrt(np.mean(results['sig_smp_wavIn']**2))*10**((65-111.6)/20) # set level to 65 dB SPL (assuming 111.6 dB full-scale)
-#    comparison['sig_smp_wavScaled'] = results['sig_smp_wavScaled']-gmtData['sig_smp_wavScaled'].T
+
     
     # apply preemphasis
     results['sig_smp_wavPre'] = tdFilterFunc(parPre,results['sig_smp_wavScaled']) # preemphahsis
-#    comparison['sig_smp_wavPre'] = results['sig_smp_wavPre']-gmtData['sig_smp_wavPre']
-   
-    
-    
-    # automatic gain control
-#    results['agc'] = dualLoopTdAgcFunc(parAgc,results['sig_smp_wavPre']) # agc
-    
+  
+    # automatic gain control    
     results['agc'] = dualLoopTdAgcFunc(parAgc,results['sig_smp_wavPre']) # agc
-    
-#    comparison['sig_smp_wavAgc'] = results['agc']['wavOut']-gmtData['agc']['wavOut']
-#    comparison['sig_smp_gainAgc'] = results['agc']['smpGain']-gmtData['agc']['smpGain']
-    
     
     # window and filter into channels
     results['sig_frm_audBuffers'] = winBufFunc(parWinBuf,results['agc']['wavOut']) # buffering
-#    results['sig_frm_audBuffers'] = winBufFunc(parWinBuf,gmtData['agc']['wavOut'][0][0]) # buffering
-        # window and filter into channels
-
-#    comparison['sig_frm_audBuffers'] = results['sig_frm_audBuffers']-gmtData['sig_frm_audBuffers']
-    
     results['sig_frm_fft'] = fftFilterbankFunc(parFft,results['sig_frm_audBuffers']) # stft
-#    comparison['sig_frm_fft'] = results['sig_frm_fft']-gmtData['sig_frm_fft']
-    
-    
-    results['sig_frm_hilbert'] = hilbertEnvelopeFunc(parHilbert,results['sig_frm_fft']) # get hilbert envelopes
-#    comparison['sig_frm_hilbert'] = results['sig_frm_hilbert']-gmtData['sig_frm_hilbert']
-    
+    results['sig_frm_hilbert'] = hilbertEnvelopeFunc(parHilbert,results['sig_frm_fft']) # get hilbert envelopes   
     results['sig_frm_energy'] = channelEnergyFunc(parEnergy,results['sig_frm_fft'],results['agc']['smpGain']) # estimate channel energy
-#    results['sig_frm_energy'] = channelEnergyFunc(parEnergy,gmtData['sig_frm_fft'],gmtData['agc']['smpGain'][0][0])
-#    comparison['sig_frm_energy'] = results['sig_frm_energy']-gmtData['sig_frm_energy']
-#   apply clearvoice noise reduction
+
+    # apply clearvoice noise reduction
     results['sig_frm_gainCv'] = clearvoiceFunc(parClearVoice,results['sig_frm_energy'])[0] # estimate noise reduction
-#    comparison['sig_frm_gainCv'] = results['sig_frm_gainCv']-gmtData['sig_frm_gainCv']
-    
     results['sig_frm_hilbertMod'] = results['sig_frm_hilbert']+results['sig_frm_gainCv'] # apply noise reduction gains to envelope
-#    comparison['sig_frm_hilbertMod'] = results['sig_frm_hilbertMod']-gmtData['sig_frm_hilbertMod']
-#    # subsample every third FFT input frame
+    
+    # subsample every third FFT input frame
     results['sig_3frm_fft'] = results['sig_frm_fft'][:,2::3]
     
+    # find spectral peaks
     results['sig_3frm_peakFreq'], results['sig_3frm_peakLoc'] = specPeakLocatorFunc(parPeak,results['sig_3frm_fft'])
-#    comparison['sig_3frm_peakFreq'] = results['sig_3frm_peakFreq']-gmtData['sig_3frm_peakFreq']
-#    comparison['sig_3frm_peakLoc'] = results['sig_3frm_peakLoc']-gmtData['sig_3frm_peakLoc']
- #upsample back to full framerate (and add padding)
+
+    # upsample back to full framerate (and add padding)
     results['sig_frm_peakFreq'] = np.repeat(np.repeat(results['sig_3frm_peakFreq'],1,axis=0),3,axis=1)
     results['sig_frm_peakFreq'] = np.concatenate((np.zeros((results['sig_frm_peakFreq'].shape[0],2)),results['sig_frm_peakFreq']),axis=1)
     results['sig_frm_peakFreq'] = results['sig_frm_peakFreq'][:,:results['sig_frm_fft'].shape[1]]
@@ -254,36 +217,20 @@ def demo3_procedural():
     results['sig_frm_peakLoc'] = np.concatenate((np.zeros((results['sig_frm_peakLoc'].shape[0],2)),results['sig_frm_peakLoc']),axis=1)
     results['sig_frm_peakLoc'] = results['sig_frm_peakLoc'][:,:results['sig_frm_fft'].shape[1]]
 
-    results['sig_frm_steerWeights'] = currentSteeringWeightsFunc(parSteer,results['sig_frm_peakLoc']) # steer current based on peak location
-#    comparison['sig_frm_steerWeights'] = results['sig_frm_steerWeights']-gmtData['sig_frm_steerWeights']
-    
-    
+
+    # Calculate current steering weights and synthesize the carrier signals
+    results['sig_frm_steerWeights'] = currentSteeringWeightsFunc(parSteer,results['sig_frm_peakLoc']) # steer current based on peak location 
     results['sig_ft_carrier'], results['sig_ft_idxFtToFrm'] = carrierSynthesisFunc(parCarrierSynth,results['sig_frm_peakFreq']) # carrier synthesis based on peak frequencies
-#    comparison['sig_ft_carrier'] = results['sig_ft_carrier']-gmtData['sig_ft_carrier']
-#    comparison['sig_ft_idxFtToFrm'] = results['sig_ft_idxFtToFrm']-gmtData['sig_ft_idxFtToFrm']
-    
+
+    # map to f120 stimulation strategy
     results['sig_ft_ampWords'] = f120MappingFunc(parMapper,results['sig_ft_carrier'],                             # combine envelopes, carrier, current steering weights and compute outputs
                                       results['sig_frm_hilbertMod'],results['sig_frm_steerWeights'],results['sig_ft_idxFtToFrm'] )
-#    comparison['sig_ft_ampWords'] = results['sig_ft_ampWords']-gmtData['sig_ft_ampWords']
+
+    # convert amplitude words to simulated electrodogram for vocoder imput
+    results['elGram'] = f120ElectrodogramFunc(parElectrodogram,results['sig_ft_ampWords'])    
     
-    results['elGram'] = f120ElectrodogramFunc(parElectrodogram,results['sig_ft_ampWords'])
-    
-    matElGramData = loadmat('C:/Users/beimx004/Documents/GitHub/hackathon_simulator/GpyT/GpyT/elGram.mat')
-    elGramGMT = matElGramData['elGram']
-    
-#    comparison['elGram'] = results['elGram']-elGramGMT
-    results['finalDeviation'] = results['elGram']-elGramGMT
-    
+    # process electrodogram
     results['audioOut'],results['audioFs'] = vocoderFunc(results['elGram'],captFs=parElectrodogram['outputFs'],resistorVal=10)
     
     
-    # diplay CV gains
-#    plt.figure()
-#    G =results['sig_frm_gainCv']*3.01
-#    plt.imshow(G)
-#    plt.colorbar
-#    plt.title('ClearVoice Gain [dB]')
-#    plt.xlabel('Frame #')
-#    plt.ylabel('Channel #')
-    
-    return results, gmtData,comparison
+    return results
