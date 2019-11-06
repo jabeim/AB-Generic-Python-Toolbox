@@ -58,7 +58,7 @@ from numba import jit
 @jit('float64[:,:](float64,float64[:,:],float64[:,:],int32)',nopython = True)
 def ActivityToPower(alpha,activity,audioPwr,blkSize):
 
-    for k in range(blkSize):
+    for k in np.arange(blkSize):
         audioPwr[:,k+1] = np.maximum(audioPwr[:,k]*alpha+activity[:,k]*(1-alpha),activity[:,k])            
     audioPwr[:,0] = audioPwr[:,blkSize]
     
@@ -80,7 +80,7 @@ def NeurToBinMatrix(neuralLocsOct,nFFT,Fs):
     mNeurToBin = np.zeros((np.floor(nFFT/2).astype(int),nNeuralLocs))
     
     I = np.zeros(nNeuralLocs)
-    for k in range(len(neuralLocsOct)):
+    for k in np.arange(len(neuralLocsOct)):
         tmp = np.abs(fBinsOct-neuralLocsOct[k])
         I[k] = np.argmin(tmp)
         mNeurToBin[I[k].astype(int),k] = 1
@@ -98,6 +98,7 @@ def NeurToBinMatrix(neuralLocsOct,nFFT,Fs):
             np.append(0,emph['emphF']),
             np.append(0,emphDb)
             )
+    
     mNeurToBin = np.multiply(mNeurToBin.T,10**(scl/20))
     mNeurToBin = np.nan_to_num(mNeurToBin).T
     

@@ -137,7 +137,7 @@ def vocoder(fileName,**kwargs):
     charge2EF = np.zeros((nNeuralLocs,nElec))
     elecFreqOct = np.log2(elecFreqs)
     
-    for iEl in range(nElec):
+    for iEl in np.arange(nElec):
         f = sp.interpolate.interp1d(
                 spread['fOct'][:,elecPlacement[iEl]]+elecFreqOct[iEl],
                 spread['voltage'][:,elecPlacement[iEl]],
@@ -184,7 +184,7 @@ def vocoder(fileName,**kwargs):
     toneFreqs = generate_cfs(20,20000,nCarriers)
     t = np.arange(nBlocks)/audioFs 
     
-    for toneNum in range(nCarriers):
+    for toneNum in np.arange(nCarriers):
         tones[:,toneNum] = np.sin(2.*np.pi*toneFreqs[toneNum]*t+phs[toneNum])   # random phase
 #        tones[:,toneNum] = np.sin(2.*np.pi*toneFreqs[toneNum]*t)               # sine phase
       
@@ -198,7 +198,7 @@ def vocoder(fileName,**kwargs):
                 
     fftFreqs = np.arange(1,np.floor(nFFT/2)+1)*audioFs/nFFT
 #%% Loop TODO: Try to split or optimize double loop for speed
-    for blkNumber in range(1,(np.floor(elData.shape[1]/blkSize).astype(int))+1):
+    for blkNumber in np.arange(1,(np.floor(elData.shape[1]/blkSize).astype(int))+1):
         # charge to electric field
         timeIdx = np.arange((blkNumber-1)*blkSize+1,blkNumber*blkSize+1,dtype=int)-1
         efData = np.dot(normRamp,elData[:,timeIdx])
@@ -213,8 +213,7 @@ def vocoder(fileName,**kwargs):
         
 #        Neural activity to audio power       
         audioPwr = ActivityToPower(alpha,activity,audioPwr,blkSize)  # JIT optimized inner loop
-        
-        
+                
         # Average energy
         energy = np.sum(audioPwr,axis = 1)/mAvg        
         spect = np.multiply(np.dot(mNeurToBin,energy),np.exp(1j*phs))       # this is normally overlap-add synthesized, to match interpolation try changing timpoints of the main blk loop to match the overlap add times (-nFFT/2)
@@ -234,7 +233,7 @@ def vocoder(fileName,**kwargs):
     newTimeVec = np.arange(nBlocks-(nFFT/2-1))
     interpSpect2 = np.zeros((len(toneFreqs),len(newTimeVec)),dtype=complex)
     modTones = np.zeros(interpSpect2.shape)
-    for freq in range(len(toneFreqs)):  
+    for freq in np.arange(len(toneFreqs)):  
         fEnvMag = sp.interpolate.interp1d(specVec,np.abs(interpSpect[freq,:]),fill_value = 'extrapolate')
         fEnvPhs = sp.interpolate.interp1d(specVec,np.angle(interpSpect[freq,:]),fill_value = 'extrapolate')       
         tEnvMag = fEnvMag(newTimeVec)
