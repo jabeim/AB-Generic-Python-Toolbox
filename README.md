@@ -5,9 +5,9 @@ This toolbox is a WIP python port of the Advanced Bionics Generic Matlab Toolbox
 # Dependencies
 The GPyT relies on several key dependencies which are not included in this repository in order to run. All required depencies can currently be installed via PyPi using pip install <package name>. The full list of dependencies is included below.
  
-NumPy - vector and matrix manipulations
-SciPy - signal processing and io functions
-PyAudio - audio playback package used only in the demo
+NumPy - vector and matrix manipulations\
+SciPy - signal processing and io functions\
+PyAudio - audio playback package used only in the demo\
 Numba - Just In Time compilation to optimize portions of vocoder simulation
 
 # Demo
