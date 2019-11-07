@@ -11,6 +11,6 @@ PyAudio - audio playback package used only in the demo\
 Numba - Just In Time compilation to optimize portions of vocoder simulation
 
 # Demo
-The GpyT includes a pre-configured demo 'demo3_procedural' which processes an audiofile containing 3 AzBio sentences in quiet. The demo returns a structure containing the results of each module in the processing pipeline and an audioOut vector generated using a tone vocoder.
+The GpyT includes a pre-configured demo 'demo3_procedural' which processes an audiofile containing 3 AzBio sentences in quiet. This demo can serve as a basic framework for developing novel processing pipelines. The demo returns a structure containing the results of each module in the processing pipeline and an audioOut vector generated using a tone vocoder. The output matrix is currently not saved to a file, but can be viewed/manipulated in the IDE after the demo has completed. 
 
  
