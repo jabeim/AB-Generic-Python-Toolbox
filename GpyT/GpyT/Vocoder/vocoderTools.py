@@ -63,6 +63,15 @@ def ActivityToPower(alpha,activity,audioPwr,blkSize):
     audioPwr[:,0] = audioPwr[:,blkSize]
     
     return audioPwr
+
+@jit('float64[:,:](float64[:,:],float64[:,:],int64,float64)',nopython = True)
+def ElFieldToActivity(efData,normOffset,nl,nlExp):
+               
+    efData = (efData-normOffset)
+    electricField = np.maximum(0,efData)
+    #        electricField = electricField/ 0.4
+    activity = np.maximum(0,np.minimum(np.exp(-nl+nl*electricField),1)-nlExp)/(1-nlExp)   
+    return activity
         
 def NeurToBinMatrix(neuralLocsOct,nFFT,Fs):
      

@@ -9,6 +9,9 @@ from Demo.demo3_procedural import demo3_procedural
 playAudio = False
 results  = demo3_procedural()
 
+elGram = results['elGram']
+np.save('elGram.npy',elGram)
+
 if playAudio:
     wavIn = wavread('Sounds/AzBio_3sent.wav')
     wavData = wavIn[1]/(2**15-1)
@@ -32,15 +35,15 @@ if playAudio:
     
     inData = input1.astype(np.float32).tostring()
     outData1 = output1.astype(np.float32).tostring()
-#    outData2 = output2.astype(np.float32).tostring()
+    outData2 = output2.astype(np.float32).tostring()
     
 #    stream.write(inData)
     stream.write(outData1)
-#    stream.write(outData2)
+    stream.write(outData2)
     
     stream.write(inData)
     stream.close()
-#savemat('GpyTdataPYTHON_FULL.mat',results)
+#savemat('GpyTdataPYTHON_GIT.mat',results)
             
         
 

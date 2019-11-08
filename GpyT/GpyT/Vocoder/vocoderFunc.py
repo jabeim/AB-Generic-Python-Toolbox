@@ -4,13 +4,14 @@ Created on Mon Apr 22 11:29:54 2019
 
 @author: beimx004
 """
+
 import numpy as np
 import scipy as sp
 import scipy.io as sio
-from .vocoderTools import ActivityToPower, NeurToBinMatrix, generate_cfs
+#from .vocoderTools import ActivityToPower, NeurToBinMatrix, generate_cfs
+from vocoderTools import ElFieldToActivity,ActivityToPower, NeurToBinMatrix, generate_cfs
 
-
-
+#@profile
 def vocoderFunc(electrodogram,**kwargs):
     captFs = kwargs.get('captFs',200000)
     nCarriers = kwargs.get('nCarriers',20)   
@@ -30,6 +31,8 @@ def vocoderFunc(electrodogram,**kwargs):
     
     
 #%% Scale and preprocess electrodogram data 
+    
+    
     scaletoMuA = 1000/resistorValue
     electrodeAmp = electrodogram
     nElec = electrodeAmp.shape[0]
@@ -144,10 +147,10 @@ def vocoderFunc(electrodogram,**kwargs):
     T[neuralLocsOct>elecFreqOct[nElec-1]] = TmuA[nElec-1]
     
     normRamp = np.multiply(charge2EF.T,1/(M-T)).T
-    normOffset = T/(M-T)
+    normOffset = (T/(M-T)).reshape((T.size,1))
 
     elData [elData < 0 ] = 0
-    
+    nlExp = np.exp(-nl)
 # Generate tone complex
     nBlocks = (nFFT/2*(np.floor(elData.shape[1]/blkSize+1))).astype(int)-1
     tones = np.zeros((nBlocks,nCarriers))
@@ -160,26 +163,28 @@ def vocoderFunc(electrodogram,**kwargs):
       
     interpSpect = np.zeros((nCarriers,np.floor(elData.shape[1]/blkSize).astype(int)),dtype=complex)
 # electrode data cleaning
-    for iChan in np.arange(0,elData.shape[0]):
-        for iTime in np.arange(1,elData.shape[1]):
-            if elData[iChan,iTime-1] > 5 and elData[iChan,iTime] > 5:
-                elData[iChan,iTime-1] = max((elData[iChan,iTime-1],elData[iChan,iTime]))
-                elData[iChan,iTime] = 0
+#    for iChan in np.arange(0,elData.shape[0]):
+#        for iTime in np.arange(1,elData.shape[1]):
+#            if elData[iChan,iTime-1] > 5 and elData[iChan,iTime] > 5:
+#                elData[iChan,iTime-1] = max((elData[iChan,iTime-1],elData[iChan,iTime]))
+#                elData[iChan,iTime] = 0
                 
     fftFreqs = np.arange(1,np.floor(nFFT/2)+1)*audioFs/nFFT
 #%% Loop TODO: Try to split or optimize double loop for speed
     for blkNumber in np.arange(1,(np.floor(elData.shape[1]/blkSize).astype(int))+1):
         # charge to electric field
         timeIdx = np.arange((blkNumber-1)*blkSize+1,blkNumber*blkSize+1,dtype=int)-1
-        efData = np.dot(normRamp,elData[:,timeIdx])
         
-        efData = (efData.T-normOffset).T
-        electricField = np.maximum(0,efData)
+        
+        efData = np.dot(normRamp,elData[:,timeIdx])        
+#        efData = (efData-normOffset)
+#        electricField = np.maximum(0,efData)
         
         # Normalized EF to neural activity
 
 #        electricField = electricField/ 0.4
-        activity = np.maximum(0,np.minimum(np.exp(-nl+nl*electricField),1)-np.exp(-nl))/(1-np.exp(-nl))
+#        activity = np.maximum(0,np.minimum(np.exp(-nl+nl*electricField),1)-nlExp)/(1-nlExp)
+        activity = ElFieldToActivity(efData,normOffset,nl,nlExp)  # JIT optimized
         
 #        Neural activity to audio power       
         audioPwr = ActivityToPower(alpha,activity,audioPwr,blkSize)  # JIT optimized inner loop
@@ -216,3 +221,8 @@ def vocoderFunc(electrodogram,**kwargs):
      
            
     return(audioOut,audioFs.astype(int))
+    
+    
+electrodogram = np.load('elGram.npy')
+(voc,Fs) = vocoderFunc(electrodogram)
+    
