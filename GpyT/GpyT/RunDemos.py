@@ -6,11 +6,11 @@ from scipy.io import savemat
 from scipy.io.wavfile import read as wavread
 from Demo.demo3_procedural import demo3_procedural
 
-playAudio = False
+playAudio = True
 results  = demo3_procedural()
 
-elGram = results['elGram']
-np.save('elGram.npy',elGram)
+#elGram = results['elGram']
+#np.save('elGram.npy',elGram)
 
 if playAudio:
     wavIn = wavread('Sounds/AzBio_3sent.wav')
@@ -37,7 +37,7 @@ if playAudio:
     outData1 = output1.astype(np.float32).tostring()
 #    outData2 = output2.astype(np.float32).tostring()
     
-    stream.write(inData)
+#    stream.write(inData)
     stream.write(outData1)
 #    stream.write(outData2)
     

@@ -9,37 +9,33 @@ import numpy as np
 import scipy as sp
 import scipy.io as sio
 from .vocoderTools import ElFieldToActivity,ActivityToPower, NeurToBinMatrix, generate_cfs
-#from vocoderTools import ElFieldToActivity,ActivityToPower, NeurToBinMatrix, generate_cfs
 
-#@profile
+
 def vocoderFunc(electrodogram,**kwargs):
     captFs = kwargs.get('captFs',200000)
     nCarriers = kwargs.get('nCarriers',20)   
     elecFreqs = kwargs.get('elecFreqs',None)
     spread = kwargs.get('spread',None)
     neuralLocsOct = kwargs.get('neuralLocsOct',None)
-    nNeuralLocs = kwargs.get('nNeuralLocs',300)
+    nNeuralLocs = kwargs.get('nNeuralLocs',100)
     MCLmuA = kwargs.get('MCLmuA',None)
     TmuA = kwargs.get('TmuA',None)
     tAvg = kwargs.get('tAvg',.005)
     audioFs = kwargs.get('audioFs',48000)
     tPlay = kwargs.get('tPlay',None)
     tauEnvMS = kwargs.get('tauEnvMS',10)
-    nl =kwargs.get('nl',8)
+    nl =kwargs.get('nl',5)
     resistorValue = kwargs.get('resistorVal',2)
     
     
     
-#%% Scale and preprocess electrodogram data 
-    
-    
+#%% Scale and preprocess electrodogram data     
     scaletoMuA = 1000/resistorValue
     electrodeAmp = electrodogram
     nElec = electrodeAmp.shape[0]
     elData = electrodeAmp*scaletoMuA
     captTs = 1/captFs
-
-    
+  
 # compute electrode locations in terms of frequency 
     if elecFreqs is None:
         elecFreqs = np.logspace(np.log10(381.5),np.log10(5046.4),nElec)
@@ -127,9 +123,7 @@ def vocoderFunc(electrodogram,**kwargs):
 # matrix to map neural activity to FFT bin frequencies
 # here we call another function
     mNeurToBin = NeurToBinMatrix(neuralLocsOct,nFFT,audioFs)
-
-
-    
+   
 # %% other auxilliary variables
     
 #    random phase
@@ -170,20 +164,13 @@ def vocoderFunc(electrodogram,**kwargs):
 #                elData[iChan,iTime] = 0
                 
     fftFreqs = np.arange(1,np.floor(nFFT/2)+1)*audioFs/nFFT
-#%% Loop TODO: Try to split or optimize double loop for speed
+#%% Loop through frames of electrode data, convert to electric field, calculate neural spectrum
     for blkNumber in np.arange(1,(np.floor(elData.shape[1]/blkSize).astype(int))+1):
         # charge to electric field
         timeIdx = np.arange((blkNumber-1)*blkSize+1,blkNumber*blkSize+1,dtype=int)-1
-        
-        
-        efData = np.dot(normRamp,elData[:,timeIdx])        
-#        efData = (efData-normOffset)
-#        electricField = np.maximum(0,efData)
+        efData = np.dot(normRamp,elData[:,timeIdx])              
         
         # Normalized EF to neural activity
-
-#        electricField = electricField/ 0.4
-#        activity = np.maximum(0,np.minimum(np.exp(-nl+nl*electricField),1)-nlExp)/(1-nlExp)
         activity = ElFieldToActivity(efData,normOffset,nl,nlExp)  # JIT optimized
         
 #        Neural activity to audio power       
@@ -202,7 +189,7 @@ def vocoderFunc(electrodogram,**kwargs):
         tonePhases = fPhaseInt(toneFreqs)        
         interpSpect[:,blkNumber-1] = np.multiply(toneMags,np.exp(1j*tonePhases))
         
-#%% Method 3 interpolated spectral envelope filtering
+#%% interpolated spectral envelope tone scaling
     
     specVec = np.arange(blkNumber)*nFFT/2
     newTimeVec = np.arange(nBlocks-(nFFT/2-1))
@@ -222,7 +209,5 @@ def vocoderFunc(electrodogram,**kwargs):
            
     return(audioOut,audioFs.astype(int))
     
-    
-electrodogram = np.load('elGram.npy')
-(voc,Fs) = vocoderFunc(electrodogram)
+
     

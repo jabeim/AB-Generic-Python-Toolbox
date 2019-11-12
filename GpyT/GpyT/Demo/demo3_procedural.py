@@ -169,7 +169,6 @@ def demo3_procedural():
             'parent' : parStrat,
             'cathodicFirst' : True,
             'channelOrder' : np.array([1,5,9,13,2,6,10,14,3,7,11,15,4,8,12]),
-            'colorScheme' : 4,
             'enablePlot' : True,
             'outputFs' : 200e3,
             'resistance' : 10e3
@@ -230,7 +229,7 @@ def demo3_procedural():
     results['elGram'] = f120ElectrodogramFunc(parElectrodogram,results['sig_ft_ampWords'])    
     
     # process electrodogram
-    results['audioOut'],results['audioFs'] = vocoderFunc(results['elGram'],captFs=parElectrodogram['outputFs'],resistorVal=10)
+    results['audioOut'],results['audioFs'] = vocoderFunc(results['elGram'],captFs=parElectrodogram['outputFs'],resistorVal=parElectrodogram['resistance']/1e3)
     
     
     return results
