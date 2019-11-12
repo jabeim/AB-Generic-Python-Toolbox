@@ -35,11 +35,11 @@ if playAudio:
     
     inData = input1.astype(np.float32).tostring()
     outData1 = output1.astype(np.float32).tostring()
-    outData2 = output2.astype(np.float32).tostring()
+#    outData2 = output2.astype(np.float32).tostring()
     
-#    stream.write(inData)
+    stream.write(inData)
     stream.write(outData1)
-    stream.write(outData2)
+#    stream.write(outData2)
     
     stream.write(inData)
     stream.close()

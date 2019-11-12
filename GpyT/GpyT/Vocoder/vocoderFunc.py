@@ -8,8 +8,8 @@ Created on Mon Apr 22 11:29:54 2019
 import numpy as np
 import scipy as sp
 import scipy.io as sio
-#from .vocoderTools import ActivityToPower, NeurToBinMatrix, generate_cfs
-from vocoderTools import ElFieldToActivity,ActivityToPower, NeurToBinMatrix, generate_cfs
+from .vocoderTools import ElFieldToActivity,ActivityToPower, NeurToBinMatrix, generate_cfs
+#from vocoderTools import ElFieldToActivity,ActivityToPower, NeurToBinMatrix, generate_cfs
 
 #@profile
 def vocoderFunc(electrodogram,**kwargs):
