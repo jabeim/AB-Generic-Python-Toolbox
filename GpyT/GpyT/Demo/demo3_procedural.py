@@ -23,6 +23,7 @@ from PostFilterbank.currentSteeringWeightsFunc import currentSteeringWeightsFunc
 from PostFilterbank.carrierSynthesisFunc import carrierSynthesisFunc
 from Mapping.f120MappingFunc import f120MappingFunc
 from Electrodogram.f120ElectrodogramFunc import f120ElectrodogramFunc
+from Validation.validateOutputFunc import validateOutputFunc
 from Vocoder.vocoderFunc import vocoderFunc
 
 
@@ -36,6 +37,7 @@ def demo3_procedural():
 #    stratWindow = stratWindow.reshape(1,stratWindow.size)
     
     parStrat = {
+            'wavFile' : 'Sounds/AzBio_3sent.wav',
             'fs' : 17400,
             'nFft' : 256,
             'nHop' : 20,
@@ -49,7 +51,6 @@ def demo3_procedural():
     
     parReadWav = {
             'parent' : parStrat,
-            'wavFile' : 'Sounds/AzBio_3sent.wav',
             'tStartEnd' : [],
             'iChannel' : 1,
             }
@@ -174,6 +175,12 @@ def demo3_procedural():
             'resistance' : 10e3
             }
     
+    parValidate = {
+            'parent' : parStrat,
+            'differenceThreshold' : 10,
+            'elGramRate' : parElectrodogram['outputFs'],
+            'outFile' : ''            
+            }
 
     results = {} #initialize demo results structure
     
@@ -227,9 +234,13 @@ def demo3_procedural():
 
     # convert amplitude words to simulated electrodogram for vocoder imput
     results['elGram'] = f120ElectrodogramFunc(parElectrodogram,results['sig_ft_ampWords'])    
+   
+    # validate output and save data
+    results['saved'] = validateOutputFunc(parValidate,results['elGram']);
     
     # process electrodogram
     results['audioOut'],results['audioFs'] = vocoderFunc(results['elGram'],captFs=parElectrodogram['outputFs'],resistorVal=parElectrodogram['resistance']/1e3)
     
+
     
     return results

@@ -6,7 +6,7 @@ from scipy.io import savemat
 from scipy.io.wavfile import read as wavread
 from Demo.demo3_procedural import demo3_procedural
 
-playAudio = True
+playAudio = False
 results  = demo3_procedural()
 
 #elGram = results['elGram']
