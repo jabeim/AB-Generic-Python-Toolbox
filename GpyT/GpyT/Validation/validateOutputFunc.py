@@ -34,16 +34,16 @@ def validateOutputFunc(par,electrodogram):
             print('Channel ' + f'{channels}' ' is too similar to the default output. DATA NOT SAVED!') 
         else:               
             print('Channels ' + f'{channels}' ' are too similar to the default output. DATA NOT SAVED!')
-        saved = False 
+        return False 
     else:
         # convert to csr sparse matrix
         data2save = sparse(electrodogram)
         
         # save in matlab compatible format for processing later
         savemat('tempPy',{'elData' : data2save})
-        saved = True
+        return True
         
-    return saved
+    
             
         
         
