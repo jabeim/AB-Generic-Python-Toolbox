@@ -9,8 +9,8 @@ import numpy as np
 from scipy.io import loadmat
 
 
-#from Frontend.readWavFunc import readWavFunc
-from Frontend.readMatFunc import readMatFunc
+from Frontend.readWavFunc import readWavFunc
+#from Frontend.readMatFunc import readMatFunc
 from Frontend.tdFilterFunc import tdFilterFunc
 from Agc.dualLoopTdAgcFunc import dualLoopTdAgcFunc
 from WinBuf.winBufFunc import winBufFunc
@@ -30,11 +30,11 @@ from Vocoder.vocoderFunc import vocoderFunc
 
 def demo3_procedural():
     
-    matWindow = loadmat('MatlabSupportFiles/windowData.mat')
-    stratWindow = matWindow['winData'].T
+#    matWindow = loadmat('MatlabSupportFiles/windowData.mat')
+#    stratWindow = matWindow['winData'].T
     
-#    stratWindow = 0.5*(np.blackman(256)+np.hanning(256))
-#    stratWindow = stratWindow.reshape(1,stratWindow.size)
+    stratWindow = 0.5*(np.blackman(256)+np.hanning(256))
+    stratWindow = stratWindow.reshape(1,stratWindow.size)
     
     parStrat = {
             'wavFile' : 'Sounds/AzBio_3sent.wav',
@@ -177,7 +177,8 @@ def demo3_procedural():
     
     parValidate = {
             'parent' : parStrat,
-            'differenceThreshold' : 10,
+            'saveWithoutValidation' : False,
+            'differenceThreshold' : 1,
             'elGramRate' : parElectrodogram['outputFs'],
             'outFile' : ''            
             }
@@ -186,8 +187,8 @@ def demo3_procedural():
     
 
     # read specified wav file and scale
-#    results['sig_smp_wavIn'] = readWavFunc(parReadWav)     # load the file specified in parReadWav
-    results['sig_smp_wavIn'] = readMatFunc(parReadWav)     # read the resampled data from matlab script to ensure equivalence for debugging  
+    results['sig_smp_wavIn'] = readWavFunc(parReadWav)     # load the file specified in parReadWav
+#    results['sig_smp_wavIn'] = readMatFunc(parReadWav)     # read the resampled data from matlab script to ensure equivalence for debugging  
     
     
     results['sig_smp_wavScaled'] = results['sig_smp_wavIn']/np.sqrt(np.mean(results['sig_smp_wavIn']**2))*10**((65-111.6)/20) # set level to 65 dB SPL (assuming 111.6 dB full-scale)
