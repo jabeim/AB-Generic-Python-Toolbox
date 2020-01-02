@@ -9,8 +9,8 @@ import numpy as np
 from scipy.io import loadmat
 
 
-#from Frontend.readWavFunc import readWavFunc
-from Frontend.readMatFunc import readMatFunc
+from Frontend.readWavFunc import readWavFunc
+#from Frontend.readMatFunc import readMatFunc
 from Frontend.tdFilterFunc import tdFilterFunc
 from Agc.dualLoopTdAgcFunc import dualLoopTdAgcFunc
 from WinBuf.winBufFunc import winBufFunc
@@ -23,19 +23,21 @@ from PostFilterbank.currentSteeringWeightsFunc import currentSteeringWeightsFunc
 from PostFilterbank.carrierSynthesisFunc import carrierSynthesisFunc
 from Mapping.f120MappingFunc import f120MappingFunc
 from Electrodogram.f120ElectrodogramFunc import f120ElectrodogramFunc
+from Validation.validateOutputFunc import validateOutputFunc
 from Vocoder.vocoderFunc import vocoderFunc
 
 
 
 def demo3_procedural():
     
-    matWindow = loadmat('MatlabSupportFiles/windowData.mat')
-    stratWindow = matWindow['winData'].T
+#    matWindow = loadmat('MatlabSupportFiles/windowData.mat')
+#    stratWindow = matWindow['winData'].T
     
-#    stratWindow = 0.5*(np.blackman(256)+np.hanning(256))
-#    stratWindow = stratWindow.reshape(1,stratWindow.size)
+    stratWindow = 0.5*(np.blackman(256)+np.hanning(256))
+    stratWindow = stratWindow.reshape(1,stratWindow.size)
     
     parStrat = {
+            'wavFile' : 'Sounds/AzBio_3sent.wav',
             'fs' : 17400,
             'nFft' : 256,
             'nHop' : 20,
@@ -49,7 +51,6 @@ def demo3_procedural():
     
     parReadWav = {
             'parent' : parStrat,
-            'wavFile' : 'Sounds/AzBio_3sent.wav',
             'tStartEnd' : [],
             'iChannel' : 1,
             }
@@ -174,13 +175,20 @@ def demo3_procedural():
             'resistance' : 10e3
             }
     
+    parValidate = {
+            'parent' : parStrat,
+            'saveWithoutValidation' : False,
+            'differenceThreshold' : 1,
+            'elGramRate' : parElectrodogram['outputFs'],
+            'outFile' : ''            
+            }
 
     results = {} #initialize demo results structure
     
 
     # read specified wav file and scale
-#    results['sig_smp_wavIn'] = readWavFunc(parReadWav)     # load the file specified in parReadWav
-    results['sig_smp_wavIn'] = readMatFunc(parReadWav)     # read the resampled data from matlab script to ensure equivalence for debugging  
+    results['sig_smp_wavIn'] = readWavFunc(parReadWav)     # load the file specified in parReadWav
+#    results['sig_smp_wavIn'] = readMatFunc(parReadWav)     # read the resampled data from matlab script to ensure equivalence for debugging  
     
     
     results['sig_smp_wavScaled'] = results['sig_smp_wavIn']/np.sqrt(np.mean(results['sig_smp_wavIn']**2))*10**((65-111.6)/20) # set level to 65 dB SPL (assuming 111.6 dB full-scale)
@@ -227,9 +235,13 @@ def demo3_procedural():
 
     # convert amplitude words to simulated electrodogram for vocoder imput
     results['elGram'] = f120ElectrodogramFunc(parElectrodogram,results['sig_ft_ampWords'])    
+   
+    # validate output and save data
+    results['saved'] = validateOutputFunc(parValidate,results['elGram']);
     
     # process electrodogram
     results['audioOut'],results['audioFs'] = vocoderFunc(results['elGram'],captFs=parElectrodogram['outputFs'],resistorVal=parElectrodogram['resistance']/1e3)
     
+
     
     return results

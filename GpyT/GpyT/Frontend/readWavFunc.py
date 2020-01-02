@@ -11,7 +11,7 @@ from nnresample import resample as resample
 
 
 def readWavFunc(par):
-    name = par['wavFile']
+    name = par['parent']['wavFile']
     stratFs = par['parent']['fs']
     
     [srcFs,signalIn] = wavread(name)
