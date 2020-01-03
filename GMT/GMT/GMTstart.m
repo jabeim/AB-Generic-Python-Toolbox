@@ -6,12 +6,15 @@
 % 28.05.2018 Joachim Thiemann created
 global GMTROOT
 
-if isempty(GMTROOT)
-    GMTROOT = getenv('GMTROOT');
-    if isempty(GMTROOT)
-        error('Environment variable GMTROOT needs to be set!');
-    end
-end
+% if isempty(GMTROOT)
+%     GMTROOT = getenv('GMTROOT');
+%     if isempty(GMTROOT)
+%         error('Environment variable GMTROOT needs to be set!');
+%     end
+% end
+
+GMTROOT = 'C:\Users\JBeim\OneDrive\Documents\GitHub\hackathon_simulator\GMT\GMT\'
+
 
 addpath([GMTROOT, filesep, 'Utility'])
 initGmtClassPath;
