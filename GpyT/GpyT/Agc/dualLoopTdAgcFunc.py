@@ -137,12 +137,11 @@ def dualLoopTdAgcFunc(par,wavIn,*args):
         
         idxWav = idxWav[idxWav>=0];
         idxWav = idxWav[idxWav < nSamp];
-        
-#        if idxWav[0] > 6290:
-#            print('divergence')
-    
+           
         
         # compute envelope
+        envLen = len(envCoefs[-idxWav.size:])
+        envWin = envCoefs[-idxWav.size:]
         env_i = np.sum(np.abs(ctrl[0,idxWav])*envCoefs[-idxWav.size:]);   # Use only first channel wavform needs to be single channel at this state
         envFast_i = clip1(env_i*fastHdrm);
         # update envelope averagers

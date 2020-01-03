@@ -6,14 +6,15 @@ Created on Thu Sep  5 11:04:47 2019
 """
 import numpy as np
 from scipy.io.wavfile import read as wavread
-from nnresample import resample
+from nnresample import resample as resample
+
 
 
 def readWavFunc(par):
-    name = par['wavFile']
+    name = par['parent']['wavFile']
     stratFs = par['parent']['fs']
     
-    [srcFs,signalIn] = wavread(name);
+    [srcFs,signalIn] = wavread(name)
     
     # rescale from integer words to float for audio processing
     
@@ -26,7 +27,9 @@ def readWavFunc(par):
         bits = 32 
         maxBit = 2.**(bits-1)
     elif signalIn.dtype == 'float32':  # dont rescale 32bit float data
-        maxBit = 0;
+        maxBit = 0
+    elif signalIn.dtype == 'float64':  # dont rescale 64 bit float either
+        maxBit = 0
     
     signalIn = signalIn/(maxBit+1) 
         
@@ -34,18 +37,15 @@ def readWavFunc(par):
         signalIn = signalIn[:,par['iChannel']-1]
     else:
         
-        signalIn = signalIn[np.newaxis,:];
-    
-    
+        signalIn = signalIn[np.newaxis,:]
     
     
     if len(par['tStartEnd']) > 0:
-        iStartEnd = np.round(par['tStartEnd']*srcFs+np.array([1,0]));
-        signalIn = signalIn[iStartEnd[0]:iStartEnd[1]];
-        
+        iStartEnd = np.round(par['tStartEnd']*srcFs+np.array([1,0]))
+        signalIn = signalIn[iStartEnd[0]:iStartEnd[1]]
+             
     
-    
-    if srcFs != stratFs:    # This implementation is not mathematically identical to matlab
+    if srcFs != stratFs:    # This implementation is not numerically identical to matlab
         if signalIn.shape[0] > 1:
             resampledSig = np.zeros((signalIn.shape[0],np.ceil(stratFs*signalIn.shape[1]/srcFs).astype(int)))
             for iCh in np.arange(signalIn.shape[0]):

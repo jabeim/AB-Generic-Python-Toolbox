@@ -124,3 +124,21 @@ dmypy.json
 GpyT/GpyT/GMTresults.mat
 GpyT/GpyT/GpyTdata.mat
 GpyT/GpyT/GMTresults.mat
+GpyT/GpyT/pyWindow.npy
+GpyT/GpyT/pyBufferFin.npy
+GpyT/GpyT/pyBuffer.npy
+GpyT/GpyT/matWindow.mat
+GpyT/GpyT/matBufferFin.mat
+GpyT/GpyT/matBuffer.mat
+GpyT/GpyT/matAudioread.mat
+GpyT/GpyT/GpyTdataPYTHON_FULL.mat
+GpyT/GpyT/GpyTdataPYTHON.mat
+GpyT/GpyT/GpyTdataMATLAB.mat
+GpyT/GpyT/GpyTdata_OLD.mat
+GpyT/GpyT/Frontend/filterTest.py
+GpyT/GpyT/deviationMatlabInputs.mat
+GpyT/GpyT/agcEnv.mat
+GpyT/GpyT/comparison.m
+
+GpyT/GpyT/elGram.npy
+GpyT/GpyT/Documentation/~$T Manual __draft__v0.1.docx
