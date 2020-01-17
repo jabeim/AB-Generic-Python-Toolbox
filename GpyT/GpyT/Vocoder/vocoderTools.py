@@ -119,7 +119,8 @@ def generate_cfs(lo, hi, n_bands):
     on an ERB scale between the frequencies 'lo' and 'hi' (in Hz).
     These would are the centre frequencies (on an ERB scale) of the bands
     specifications made by 'generate_bands' with the same arguments
-    """
+    """  
+    
     density = n_bands / (hz2erb(hi) - hz2erb(lo))
     bands = []
     for i in np.arange(1, n_bands + 1):

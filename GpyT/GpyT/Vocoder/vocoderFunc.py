@@ -4,7 +4,7 @@ Created on Mon Apr 22 11:29:54 2019
 
 @author: beimx004
 """
-
+import time
 import numpy as np
 import scipy as sp
 import scipy.io as sio
@@ -22,10 +22,11 @@ def vocoderFunc(electrodogram,**kwargs):
     TmuA = kwargs.get('TmuA',None)
     tAvg = kwargs.get('tAvg',.005)
     audioFs = kwargs.get('audioFs',48000)
-    tPlay = kwargs.get('tPlay',None)
     tauEnvMS = kwargs.get('tauEnvMS',10)
     nl =kwargs.get('nl',5)
     resistorValue = kwargs.get('resistorVal',2)
+    saveOutput = kwargs.get('saveOutput',True)
+    outputFile = kwargs.get('outpufFile',None)
     
     
     
@@ -97,15 +98,8 @@ def vocoderFunc(electrodogram,**kwargs):
 # audio output frequency
     audioFs = np.ceil(tAvg*audioFs)/tAvg
     audioTs = 1/audioFs
-    nAvg = np.int(np.round(tAvg/audioTs))
     tWin = 2*tAvg
-    nFFT = np.round(tWin/audioTs).astype(int)
-# total audio file length
-    if tPlay is None:
-        tPlay = 10*tWin;
-    else:
-        tPlay = np.ceil(tPlay/tWin)*tWin
-        
+    nFFT = np.round(tWin/audioTs).astype(int)        
         
 # create matrix to convert electrode charge to electric field
     charge2EF = np.zeros((nNeuralLocs,nElec))
@@ -124,13 +118,15 @@ def vocoderFunc(electrodogram,**kwargs):
 # here we call another function
     mNeurToBin = NeurToBinMatrix(neuralLocsOct,nFFT,audioFs)
    
-# %% other auxilliary variables
+# Define auxilliary variables    
     
-#    random phase
+    #    random phase
     phs = 2*np.pi*np.random.rand(np.floor(nFFT/2).astype(int))
     
+    # preallocate audio power matrix
     audioPwr = np.zeros((nNeuralLocs,blkSize+1))
     
+    # interpolate M and T levels to match neural locations
     M = np.interp(neuralLocsOct,elecFreqOct,MCLmuA)
     M[neuralLocsOct<elecFreqOct[0]] = MCLmuA[0]
     M[neuralLocsOct>elecFreqOct[nElec-1]] = MCLmuA[nElec-1]
@@ -145,7 +141,7 @@ def vocoderFunc(electrodogram,**kwargs):
 
     elData [elData < 0 ] = 0
     nlExp = np.exp(-nl)
-# Generate tone complex
+# Generate output carrier tone complex
     nBlocks = (nFFT/2*(np.floor(elData.shape[1]/blkSize+1))).astype(int)-1
     tones = np.zeros((nBlocks,nCarriers))
     toneFreqs = generate_cfs(20,20000,nCarriers)
@@ -204,8 +200,16 @@ def vocoderFunc(electrodogram,**kwargs):
         modTones[freq,:] = tones[:-(nFFT/2-1).astype(int),freq]*np.abs(interpSpect2[freq,:])
        
     audioOut = np.sum(modTones,axis=0)
+    audioOut = audioOut/np.max(audioOut)
 
-     
+    if saveOutput:
+        if outputFile is None:
+            timestr = time.strftime("%Y%m%d_%H%M%S") 
+            outputFile = 'Output/VocoderOutput_'+timestr+'.wav'
+        amplitude = np.iinfo(np.int16).max
+        audioToSave = audioOut*amplitude
+        sio.wavfile.write(outputFile,audioFs.astype(int),np.int16(audioToSave))            
+        
            
     return(audioOut,audioFs.astype(int))
     
