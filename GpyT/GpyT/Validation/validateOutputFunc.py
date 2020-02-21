@@ -29,10 +29,8 @@ def validateOutputFunc(par,electrodogram):
     defaultData = loadmat('Validation/'+validationFileName)
     # calculate absolute differences between standard and test algorithm outputs
 #    outputDifference = np.sum(np.abs(electrodogram-defaultData['elData'].A),axis=1)
-    outputDifference = np.sum(electrodogram-defaultData['elData'].A,axis=1)
+    outputDifference = np.sum(electrodogram-defaultData['elData'].A,axis=1).reshape(16,1)
     
-    #[TESTING ONLY] dummy output differences to force saving 
-#    outputDifference = np.ones(outputDifference.shape)
     
     # Unless override is enabled, if any channel is not sufficiently different from the default algorithm produce a warning, otherwise save the output
     if par['saveWithoutValidation'] == True:
@@ -44,7 +42,7 @@ def validateOutputFunc(par,electrodogram):
                 print('Channels ' + f'{channels}' ' are too similar to the default output.')
         
         # convert to csc sparse matrix for reduced file size
-        data2save = sparse(electrodogram,dtype=np.float)
+        data2save = sparse(np.hstack((outputDifference,electrodogram)),dtype=np.float)
         data2save.eliminate_zeros()
         
         # save in matlab compatible format for processing later
@@ -56,17 +54,17 @@ def validateOutputFunc(par,electrodogram):
             savemat('Output/'+par['outFile'],{'elData' : data2save})                
         return True      
     elif par['saveWithoutValidation'] == False:
-        if np.any(outputDifference < par['differenceThreshold']):
-            channels = np.where(outputDifference < par['differenceThreshold'])[0]
+        channels = np.where(outputDifference < par['differenceThreshold'])[0]
+        if len(channels) > par['maxSimilarChannels']:
             if len(channels) == 1:           
                 print('Channel ' + f'{channels}' ' is too similar to the default output. DATA NOT SAVED!') 
             else:               
                 print('Channels ' + f'{channels}' ' are too similar to the default output. DATA NOT SAVED!')
-            return False   
+            return False 
 
         else:
             # convert to csc sparse matrix for reduced file size
-            data2save = sparse(electrodogram,dtype=np.float)
+            data2save = sparse(np.hstack((outputDifference,electrodogram)),dtype=np.float)
             data2save.eliminate_zeros()
             
             # save in matlab compatible format for processing later

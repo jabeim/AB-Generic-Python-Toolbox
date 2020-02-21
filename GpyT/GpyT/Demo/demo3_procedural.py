@@ -179,6 +179,7 @@ def demo3_procedural():
             'parent' : parStrat,
             'saveWithoutValidation' : False,
             'differenceThreshold' : 1,
+            'maxSimilarChannels' : 8,
             'elGramRate' : parElectrodogram['outputFs'],
             'outFile' : ''            
             }
@@ -187,8 +188,8 @@ def demo3_procedural():
     
 
     # read specified wav file and scale
-    results['sig_smp_wavIn'] = readWavFunc(parReadWav)     # load the file specified in parReadWav
-#    results['sig_smp_wavIn'] = readMatFunc(parReadWav)     # read the resampled data from matlab script to ensure equivalence for debugging  
+#    results['sig_smp_wavIn'] = readWavFunc(parReadWav)     # load the file specified in parReadWav
+    results['sig_smp_wavIn'] = readMatFunc(parReadWav)     # read the resampled data from matlab script to ensure equivalence for debugging  
     
     
     results['sig_smp_wavScaled'] = results['sig_smp_wavIn']/np.sqrt(np.mean(results['sig_smp_wavIn']**2))*10**((65-111.6)/20) # set level to 65 dB SPL (assuming 111.6 dB full-scale)

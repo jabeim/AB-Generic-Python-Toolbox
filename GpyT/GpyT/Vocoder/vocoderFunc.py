@@ -17,7 +17,7 @@ def vocoderFunc(electrodogram,**kwargs):
     elecFreqs = kwargs.get('elecFreqs',None)
     spread = kwargs.get('spread',None)
     neuralLocsOct = kwargs.get('neuralLocsOct',None)
-    nNeuralLocs = kwargs.get('nNeuralLocs',100)
+    nNeuralLocs = kwargs.get('nNeuralLocs',300)
     MCLmuA = kwargs.get('MCLmuA',None)
     TmuA = kwargs.get('TmuA',None)
     tAvg = kwargs.get('tAvg',.005)
@@ -31,8 +31,8 @@ def vocoderFunc(electrodogram,**kwargs):
     
     
 #%% Scale and preprocess electrodogram data     
-    scaletoMuA = 1000/resistorValue
-    electrodeAmp = electrodogram
+    scaletoMuA = 500/resistorValue
+    electrodeAmp = electrodogram[:,1:] # the first column in the matrix is actually channel similarity.
     nElec = electrodeAmp.shape[0]
     elData = electrodeAmp*scaletoMuA
     captTs = 1/captFs

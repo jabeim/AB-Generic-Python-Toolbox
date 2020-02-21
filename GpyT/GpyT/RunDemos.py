@@ -6,7 +6,7 @@ from scipy.io import savemat
 from scipy.io.wavfile import read as wavread
 from Demo.demo3_procedural import demo3_procedural
 
-playAudio = False
+playAudio = True
 results  = demo3_procedural()
 
 #elGram = results['elGram']
@@ -46,6 +46,3 @@ if playAudio:
 #savemat('GpyTdataPYTHON_GIT.mat',results)
             
         
-
-
-    
