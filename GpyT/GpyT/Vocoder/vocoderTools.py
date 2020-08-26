@@ -69,8 +69,9 @@ def ElFieldToActivity(efData,normOffset,nl,nlExp):
                
     efData = (efData-normOffset)
     electricField = np.maximum(0,efData)
-    #        electricField = electricField/ 0.4
-    activity = np.maximum(0,np.minimum(np.exp(-nl+nl*electricField),1)-nlExp)/(1-nlExp)   
+    electricField = electricField / 0.4 * 0.5
+#    activity = np.maximum(0,np.minimum(np.exp(-nl+nl*electricField),1)-nlExp)/(1-nlExp)  
+    activity = np.maximum(0,np.minimum(np.exp(nl*electricField),nlExp)-1)/(nlExp-1)
     return activity
         
 def NeurToBinMatrix(neuralLocsOct,nFFT,Fs):

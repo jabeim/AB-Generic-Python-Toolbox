@@ -6,7 +6,7 @@ Created on Thu Sep  5 11:04:47 2019
 """
 import numpy as np
 from scipy.io.wavfile import read as wavread
-from nnresample import resample as resample
+from nnresample import resample
 
 
 

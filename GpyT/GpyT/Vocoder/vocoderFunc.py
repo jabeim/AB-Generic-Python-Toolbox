@@ -8,31 +8,105 @@ import time
 import numpy as np
 import scipy as sp
 import scipy.io as sio
+import h5py
 from .vocoderTools import ElFieldToActivity,ActivityToPower, NeurToBinMatrix, generate_cfs
 
 
 def vocoderFunc(electrodogram,**kwargs):
-    captFs = kwargs.get('captFs',200000)
-    nCarriers = kwargs.get('nCarriers',20)   
-    elecFreqs = kwargs.get('elecFreqs',None)
-    spread = kwargs.get('spread',None)
-    neuralLocsOct = kwargs.get('neuralLocsOct',None)
-    nNeuralLocs = kwargs.get('nNeuralLocs',300)
-    MCLmuA = kwargs.get('MCLmuA',None)
-    TmuA = kwargs.get('TmuA',None)
-    tAvg = kwargs.get('tAvg',.005)
+
     audioFs = kwargs.get('audioFs',48000)
-    tauEnvMS = kwargs.get('tauEnvMS',10)
-    nl =kwargs.get('nl',5)
-    resistorValue = kwargs.get('resistorVal',2)
-    saveOutput = kwargs.get('saveOutput',True)
+    saveOutput = kwargs.get('saveOutput',False)
     outputFile = kwargs.get('outpufFile',None)
     
-    
-    
+    captFs = 55556
+    nCarriers = 20   
+    elecFreqs = None
+    spread = None
+    neuralLocsOct = None
+    nNeuralLocs = 300
+    MCLmuA = 500
+    TmuA = 50
+    tAvg = 0.005
+    tauEnvMS = 10
+    nl = 5
+    resistorValue = 10
+
+
+#%% Process electrodogram before proceeding to vocoder pipeline
+    if type(electrodogram) is str:         
+        if electrodogram[-3:] == '.h5':
+            with h5py.File(electrodogram,'r') as f:
+                if len(list(f.keys())) == 1:
+                    electrodogram = np.array(f.get(list(f.keys())[0]))
+                    if 16 in electrodogram.shape and len(electrodogram.shape) == 2:
+                        if electrodogram.shape[0] == 16:
+                            pass
+                        else:
+                            electrodogram = electrodogram.T
+                    else:
+                        raise ValueError('Electrodogram must be shape 16xn, (16 electrodes x n total samples)')
+                else:
+                    raise ValueError('HDF5 File contains multiple datasets. File should contain only the electrode pulse matrix.')
+                f.close()
+        elif electrodogram[-4:] == '.mat':
+            rawData = sio.loadmat(electrodogram)
+            if 'elData' in rawData.keys():                 
+                electrodogram = rawData['elData']            
+                if type(electrodogram) is sp.sparse.csc.csc_matrix:
+                    electrodogram = electrodogram.A
+                    if 16 in electrodogram.shape and len(electrodogram.shape) == 2:
+                            if electrodogram.shape[0] == 16:
+                                pass
+                            else:
+                                electrodogram = electrodogram.T
+                    else:
+                        raise ValueError('Electrodogram must be shape 16xn, (16 electrodes x n total samples)')
+            else:
+                raise KeyError('The supplied .mat file must contain data saved as "elData"')
+            
+            
+        elif electrodogram[-4:] == '.npy':
+            rawData = np.load(electrodogram);
+            electrodogram = rawData
+            if 16 in electrodogram.shape and len(electrodogram.shape) == 2:
+                if electrodogram.shape[0] == 16:
+                    pass
+                else:
+                    electrodogram = electrodogram.T
+            else:
+                raise ValueError('Electrodogram must be shape 16xn, (16 electrodes x n total samples)')
+            
+        elif electrodogram[-4:] == '.npz':
+            rawData = sp.sparse.load_npz(electrodogram)
+            electrodogram = rawData.A  
+            if 16 in electrodogram.shape and len(electrodogram.shape) == 2:
+                if electrodogram.shape[0] == 16:
+                    pass
+                else:
+                    electrodogram = electrodogram.T
+            else:
+                raise ValueError('Electrodogram must be shape 16xn, (16 electrodes x n total samples)')
+            
+            
+        else:
+            raise ValueError('Invalid File format: Only .npy, scipy sparse .npz, .h5, or .mat files are allowed')
+    elif type(electrodogram) is np.ndarray: 
+        if 16 in electrodogram.shape:
+            if electrodogram.shape[0] == 16:
+                pass
+            else:
+                electrodogram = electrodogram.T
+        else:
+            raise ValueError('Electrodogram must be shape 16xn, (16 electrodes x n total samples)')
+    else:
+        raise ValueError('Expected str or numpy ndarray inputs.')
+            
+
+
 #%% Scale and preprocess electrodogram data     
     scaletoMuA = 500/resistorValue
-    electrodeAmp = electrodogram[:,1:] # the first column in the matrix is actually channel similarity.
+#    electrodeAmp = electrodogram[:,1:] # the first column in the matrix is actually channel similarity.
+    electrodeAmp =electrodogram
     nElec = electrodeAmp.shape[0]
     elData = electrodeAmp*scaletoMuA
     captTs = 1/captFs
@@ -140,7 +214,7 @@ def vocoderFunc(electrodogram,**kwargs):
     normOffset = (T/(M-T)).reshape((T.size,1))
 
     elData [elData < 0 ] = 0
-    nlExp = np.exp(-nl)
+    nlExp = np.exp(nl)
 # Generate output carrier tone complex
     nBlocks = (nFFT/2*(np.floor(elData.shape[1]/blkSize+1))).astype(int)-1
     tones = np.zeros((nBlocks,nCarriers))
@@ -166,7 +240,19 @@ def vocoderFunc(electrodogram,**kwargs):
         timeIdx = np.arange((blkNumber-1)*blkSize+1,blkNumber*blkSize+1,dtype=int)-1
         efData = np.dot(normRamp,elData[:,timeIdx])              
         
+        
+        
         # Normalized EF to neural activity
+        
+        
+#        efData = (efData-normOffset)
+#        electricField = np.maximum(0,efData)
+#        electricField = electricField / 0.4 * 0.5  
+#        activity = np.maximum(0,np.minimum(np.exp(nl*electricField),nlExp)-1)/(nlExp-1)
+        
+        
+        
+        
         activity = ElFieldToActivity(efData,normOffset,nl,nlExp)  # JIT optimized
         
 #        Neural activity to audio power       
@@ -174,41 +260,48 @@ def vocoderFunc(electrodogram,**kwargs):
                 
         # Average energy
         energy = np.sum(audioPwr,axis = 1)/mAvg        
-        spect = np.multiply(np.dot(mNeurToBin,energy),np.exp(1j*phs))       # this is normally overlap-add synthesized, to match interpolation try changing timpoints of the main blk loop to match the overlap add times (-nFFT/2)
+#        spect = np.multiply(np.dot(mNeurToBin,energy),np.exp(1j*phs))       # this is normally overlap-add synthesized, to match interpolation try changing timpoints of the main blk loop to match the overlap add times (-nFFT/2)
         
         # interpolate spectrum across frequency 
-        fMagInt = sp.interpolate.interp1d(fftFreqs,np.abs(spect),fill_value = 'extrapolate')
-        fPhaseInt = sp.interpolate.interp1d(fftFreqs,np.angle(spect),fill_value = 'extrapolate')
+#        fMagInt = sp.interpolate.interp1d(fftFreqs,np.abs(spect),fill_value = 'extrapolate')
+#        fPhaseInt = sp.interpolate.interp1d(fftFreqs,np.angle(spect),fill_value = 'extrapolate')
+        
+        fMagInt = sp.interpolate.interp1d(fftFreqs,np.dot(mNeurToBin,energy),fill_value = 'extrapolate')
         
         #calculate tone 
         toneMags = fMagInt(toneFreqs)
-        tonePhases = fPhaseInt(toneFreqs)        
-        interpSpect[:,blkNumber-1] = np.multiply(toneMags,np.exp(1j*tonePhases))
+#        tonePhases = fPhaseInt(toneFreqs)        
+#        interpSpect[:,blkNumber-1] = np.multiply(toneMags,np.exp(1j*tonePhases))
+        interpSpect[:,blkNumber-1] = toneMags
         
 #%% interpolated spectral envelope tone scaling
     
     specVec = np.arange(blkNumber)*nFFT/2
     newTimeVec = np.arange(nBlocks-(nFFT/2-1))
-    interpSpect2 = np.zeros((len(toneFreqs),len(newTimeVec)),dtype=complex)
-    modTones = np.zeros(interpSpect2.shape)
+#    interpSpect2 = np.zeros((len(toneFreqs),len(newTimeVec)),dtype=complex)
+    modTones = np.zeros((len(toneFreqs),len(newTimeVec)))
     for freq in np.arange(len(toneFreqs)):  
-        fEnvMag = sp.interpolate.interp1d(specVec,np.abs(interpSpect[freq,:]),fill_value = 'extrapolate')
-        fEnvPhs = sp.interpolate.interp1d(specVec,np.angle(interpSpect[freq,:]),fill_value = 'extrapolate')       
+#        fEnvMag = sp.interpolate.interp1d(specVec,np.abs(interpSpect[freq,:]),fill_value = 'extrapolate')
+#        fEnvPhs = sp.interpolate.interp1d(specVec,np.angle(interpSpect[freq,:]),fill_value = 'extrapolate')       
+#        tEnvMag = fEnvMag(newTimeVec)
+#        tEnvPhs = fEnvPhs(newTimeVec)       
+#        interpSpect2[freq,:] = tEnvMag*np.exp(1j*tEnvPhs)
+#        modTones[freq,:] = tones[:-(nFFT/2-1).astype(int),freq]*np.abs(interpSpect2[freq,:])
+        fEnvMag = sp.interpolate.interp1d(specVec,interpSpect[freq,:],fill_value = 'extrapolate')
         tEnvMag = fEnvMag(newTimeVec)
-        tEnvPhs = fEnvPhs(newTimeVec)       
-        interpSpect2[freq,:] = tEnvMag*np.exp(1j*tEnvPhs)
-        modTones[freq,:] = tones[:-(nFFT/2-1).astype(int),freq]*np.abs(interpSpect2[freq,:])
+        modTones[freq,:] = tones[:-(nFFT/2-1).astype(int),freq]*tEnvMag
+        
        
     audioOut = np.sum(modTones,axis=0)
-    audioOut = audioOut/np.max(audioOut)
+    audioOut = audioOut/np.sqrt(np.mean(np.square(audioOut)))*10**(-25/20)
 
     if saveOutput:
         if outputFile is None:
             timestr = time.strftime("%Y%m%d_%H%M%S") 
-            outputFile = 'Output/VocoderOutput_'+timestr+'.wav'
+            outputFile = 'Output/VocoderOutput_'+timestr
         amplitude = np.iinfo(np.int16).max
         audioToSave = audioOut*amplitude
-        sio.wavfile.write(outputFile,audioFs.astype(int),np.int16(audioToSave))            
+        sio.wavfile.write(outputFile+'.wav',audioFs.astype(int),np.int16(audioToSave))            
         
            
     return(audioOut,audioFs.astype(int))

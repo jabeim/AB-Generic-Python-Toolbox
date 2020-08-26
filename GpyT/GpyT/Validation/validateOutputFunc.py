@@ -2,8 +2,9 @@
 
 import time
 import numpy as np
-from scipy.io import loadmat, savemat
-from scipy.sparse import csc_matrix as sparse
+import scipy.sparse as sparse
+from scipy.io import loadmat
+
 
 
 def validateOutputFunc(par,electrodogram):
@@ -15,7 +16,7 @@ def validateOutputFunc(par,electrodogram):
     # validate type, shape, and sampling rate of elgram so that comparison with standard model can take place
     assert isinstance(electrodogram,np.ndarray), 'Electrodogram must be a numpy array'
     assert len(electrodogram.shape)==2, 'Electrodogram must be a 2 dimensional array'
-    assert par['elGramRate'] == 200e3, 'Electrodogram must be generated with 200 kHz rate'
+    assert par['elGramRate'] == 55556, 'Electrodogram must be generated with 55556 Hz rate'
     
     # flip matrix so that rows = 16 if necessary
     if electrodogram.shape[0] != 16:
@@ -29,8 +30,7 @@ def validateOutputFunc(par,electrodogram):
     defaultData = loadmat('Validation/'+validationFileName)
     # calculate absolute differences between standard and test algorithm outputs
 #    outputDifference = np.sum(np.abs(electrodogram-defaultData['elData'].A),axis=1)
-    outputDifference = np.sum(electrodogram-defaultData['elData'].A,axis=1).reshape(16,1)
-    
+    outputDifference = np.sum(electrodogram-defaultData['elData'],axis=1).reshape(16,1)
     
     # Unless override is enabled, if any channel is not sufficiently different from the default algorithm produce a warning, otherwise save the output
     if par['saveWithoutValidation'] == True:
@@ -42,16 +42,18 @@ def validateOutputFunc(par,electrodogram):
                 print('Channels ' + f'{channels}' ' are too similar to the default output.')
         
         # convert to csc sparse matrix for reduced file size
-        data2save = sparse(np.hstack((outputDifference,electrodogram)),dtype=np.float)
+        data2save = sparse.csc_matrix(electrodogram,dtype=np.float)
         data2save.eliminate_zeros()
         
         # save in matlab compatible format for processing later
         if len(par['outFile']) == 0:
             # use timestamp format if no filename specified
-            timestr = time.strftime("%Y%m%d_%H%M%S") 
-            savemat('Output/elGramOutput_'+timestr,{'elData' : data2save})
+            timestr = time.strftime("%Y%m%d_%H%M%S")
+            sparse.save_npz('Output/elGramOutput_'+timestr,data2save)            
         else:
-            savemat('Output/'+par['outFile'],{'elData' : data2save})                
+            sparse.save_npz('Output/'+par['outFile'],data2save) 
+
+               
         return True      
     elif par['saveWithoutValidation'] == False:
         channels = np.where(outputDifference < par['differenceThreshold'])[0]
@@ -64,16 +66,16 @@ def validateOutputFunc(par,electrodogram):
 
         else:
             # convert to csc sparse matrix for reduced file size
-            data2save = sparse(np.hstack((outputDifference,electrodogram)),dtype=np.float)
+            data2save = sparse.csc_matrix(electrodogram,dtype=np.float)
             data2save.eliminate_zeros()
             
             # save in matlab compatible format for processing later
             if len(par['outFile']) == 0:
                 # use timestamp format if no filename specified
                 timestr = time.strftime("%Y%m%d_%H%M%S") 
-                savemat('Output/elGramOutput_'+timestr,{'elData' : data2save})
+                sparse.save_npz('Output/elGramOutput_'+timestr,data2save)     
             else:
-                savemat('Output/'+par['outFile'],{'elData' : data2save})                
+                sparse.save_npz('Output/'+par['outFile'],data2save) 
             return True
         
     
