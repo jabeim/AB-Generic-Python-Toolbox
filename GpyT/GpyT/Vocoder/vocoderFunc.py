@@ -8,6 +8,8 @@ import time
 import numpy as np
 import scipy as sp
 import scipy.io as sio
+import scipy.io.wavfile
+import scipy.interpolate
 import h5py
 from .vocoderTools import ElFieldToActivity,ActivityToPower, NeurToBinMatrix, generate_cfs
 
@@ -16,7 +18,7 @@ def vocoderFunc(electrodogram,**kwargs):
 
     audioFs = kwargs.get('audioFs',48000)
     saveOutput = kwargs.get('saveOutput',False)
-    outputFile = kwargs.get('outpufFile',None)
+    outputFile = kwargs.get('outputFile',None)
     
     captFs = 55556
     nCarriers = 20   
@@ -180,7 +182,7 @@ def vocoderFunc(electrodogram,**kwargs):
     elecFreqOct = np.log2(elecFreqs)
     
     for iEl in np.arange(nElec):
-        f = sp.interpolate.interp1d(
+        f = scipy.interpolate.interp1d(
                 spread['fOct'][:,elecPlacement[iEl]]+elecFreqOct[iEl],
                 spread['voltage'][:,elecPlacement[iEl]],
                 fill_value = 'extrapolate')       
@@ -266,7 +268,7 @@ def vocoderFunc(electrodogram,**kwargs):
 #        fMagInt = sp.interpolate.interp1d(fftFreqs,np.abs(spect),fill_value = 'extrapolate')
 #        fPhaseInt = sp.interpolate.interp1d(fftFreqs,np.angle(spect),fill_value = 'extrapolate')
         
-        fMagInt = sp.interpolate.interp1d(fftFreqs,np.dot(mNeurToBin,energy),fill_value = 'extrapolate')
+        fMagInt = scipy.interpolate.interp1d(fftFreqs,np.dot(mNeurToBin,energy),fill_value = 'extrapolate')
         
         #calculate tone 
         toneMags = fMagInt(toneFreqs)
@@ -287,7 +289,7 @@ def vocoderFunc(electrodogram,**kwargs):
 #        tEnvPhs = fEnvPhs(newTimeVec)       
 #        interpSpect2[freq,:] = tEnvMag*np.exp(1j*tEnvPhs)
 #        modTones[freq,:] = tones[:-(nFFT/2-1).astype(int),freq]*np.abs(interpSpect2[freq,:])
-        fEnvMag = sp.interpolate.interp1d(specVec,interpSpect[freq,:],fill_value = 'extrapolate')
+        fEnvMag = scipy.interpolate.interp1d(specVec,interpSpect[freq,:],fill_value = 'extrapolate')
         tEnvMag = fEnvMag(newTimeVec)
         modTones[freq,:] = tones[:-(nFFT/2-1).astype(int),freq]*tEnvMag
         
@@ -301,7 +303,7 @@ def vocoderFunc(electrodogram,**kwargs):
             outputFile = 'Output/VocoderOutput_'+timestr
         amplitude = np.iinfo(np.int16).max
         audioToSave = audioOut*amplitude
-        sio.wavfile.write(outputFile+'.wav',audioFs.astype(int),np.int16(audioToSave))            
+        scipy.io.wavfile.write(outputFile+'.wav',audioFs.astype(int),np.int16(audioToSave))            
         
            
     return(audioOut,audioFs.astype(int))
