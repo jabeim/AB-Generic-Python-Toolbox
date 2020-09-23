@@ -9,6 +9,7 @@ The GPyT relies on several key packages which are not included in this repositor
 NumPy - vector and matrix manipulations\
 SciPy - signal processing and io functions\
 PyAudio - audio playback package used only in the demo\
+ pyAudio requires portAudio. If using anaconda 'conda install pyaudio' will install portaudio first
 Numba - Just In Time compilation to optimize portions of vocoder simulation
 
 # Demo
