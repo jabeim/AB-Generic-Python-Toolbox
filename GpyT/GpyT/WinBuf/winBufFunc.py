@@ -19,7 +19,6 @@ def winBufFunc(par,signalIn):
         N = M;
         
 #    signalIn = (np.arange(signalIn.size)+1).reshape(signalIn.shape)    
-
     
     b = buffer(signalIn[:,0],strat['nFft'],strat['nFft']-strat['nHop'],par['bufOpt'])  
     b = b*strat['window'].T

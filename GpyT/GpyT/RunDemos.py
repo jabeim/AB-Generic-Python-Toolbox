@@ -16,7 +16,6 @@ if playAudio:
     wavFs = wavIn[0]
 
     wavResampled = resample(wavData,((results['audioFs']/wavFs)*wavData.shape[0]).astype(int))
-#    wavResampled = resample(wavData,results['audioFs'],wavFs,axis=1)
     input1 = np.float32(np.concatenate((wavResampled,np.zeros(results['audioFs']))))
     
     output1 = np.float32(np.concatenate((np.zeros(results['audioFs']),results['audioOut'])))
@@ -32,8 +31,8 @@ if playAudio:
     output_device_index = devIndex
     )
     
-    inData = input1.astype(np.float32).tostring()
-    outData1 = output1.astype(np.float32).tostring()
+    inData = input1.astype(np.float32).tobytes()
+    outData1 = output1.astype(np.float32).tobytes()
     
 
     stream.write(outData1)
@@ -43,4 +42,4 @@ if playAudio:
     stream.close()
     
     
-        
+    
