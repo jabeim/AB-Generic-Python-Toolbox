@@ -1,141 +1,164 @@
 # -*- coding: utf-8 -*-
 
+# saved = validateOutputFunc(par,electrodogram,sourceFileName)
+# 
+# Validates electrodogram outputs based on contest rules by ensuring that:
+#  1. electrodogram sampling rate is 55556 Hz
+#  2. electrodogram contains 16 rows (channels)
+#  3. electrodogram length matches the resampled source audio (within a small tolerance)
+#  4. electrodogram channels are charge-balanced: abs(sum(channel)) < epsilon
+# 
+#  Validation also attempts to load a validation file containing the
+#  electrodogram of the same stimulus preprocessed by the default strategy
+#  for comparison. A warning is issued if no validation file is found, and
+#  the similarity comparison process is skipped.
+# 
+#  A simple subtractive analysis of each channel is used to estimate the
+#  similarity between elecdtrode channels using cross correllation to time
+#  align the data.
+# 
+#  INPUT:
+#   electrodogram - either a 16 x n matrix, where N is audioDuration*55556
+#            samples, or a path to a .mat file containing the electrodogram data
+#            saved as a variable 'elData'
+#   sourceFileName - the name of the acoustic source file that generated the electrodogram as a string.
+# 
+#  KEYS FOR PAR:
+#    parent['wavFile'] - the name of the source audio file being processed, ['Sounds\example.wav']
+#    lengthTolerance - the number of samples difference allowable between validation and electrodogram array lengths, [15]
+#    saveIfSimilar - whether or not to save the output matrix if similarity between electrodogram and default data is high, [bool]
+#    differenceThreshold - max value for sum(abs(electrodogram-validationData)) in each channel, 
+#                          channels are flagged as similar if the result is less than the threshold, [int]
+#    maxSimilarChannels - maximum number of channels where the similarity exceeds the difference Threshold, [8]
+#    elGramFs - the sampling frequency used to generate electrodogram; also stored in the parameters for f120ElectrodogramFunc
+#                MUST BE SET TO 55556 Hz
+#    outFile - additional text appended to the filename of electrodogram data saved by the validation function, '' [string]
+# 
+#  OUTPUT:
+#     saved - boolean indicating whether or not the data in electrodogram was saved to an output file, true [bool]
+# 
+
 import time
 import numpy as np
 import h5py
 import warnings
 import scipy.sparse as sparse
+from scipy.io.wavfile import read as wavread
+# from .validationTools import xCorrSimilarity
 from scipy.io import loadmat
 
 
 
+
 def validateOutputFunc(par,electrodogram,sourceFileName):
+    
+    lengthTol = par['lengthTolerance']
+    inputFileName = sourceFileName[sourceFileName.rfind('/')+1:sourceFileName.rfind('.wav')]
+    validationFileName = inputFileName+'_validation.mat'
+    skipMatrixSubtraction = False
+    
+    try:
+        defaultData = loadmat('Validation/'+validationFileName)
+        if type(defaultData['elData']) is sparse.csc.csc_matrix:
+            validationData = defaultData['elData'].A
+        else:
+            validationData = defaultData['elData']
+            
+        assert validationData.shape == electrodogram.shape,'Electrodogram shape does not match validation file. Expected: '+f"{validationData.shape}"+', found '+f'{electrodogram.shape}'
+    except FileNotFoundError:
+            validationData = electrodogram  # if data flag for skipping validation files is set load an empty matrix (useful for processing non-official/unvalidated inputs)
+            warnings.warn('No Validation file found! Validation process will be skipped, results may not be accepted for final entry submission!!')
+            sourceData,Fs = wavread(sourceFileName);
+            validationData = np.zeros((16,np.fix(len(sourceData)/Fs*55556)))
+            skipMatrixSubtraction = True
+    except:
+         raise
+         
     # if a string is passed, load that datafile according to extension string
-    if type(electrodogram) is str:
-        # First load the validation file if it exists
-        validationFileName = electrodogram[:electrodogram.rfind('_elGramOutput')]+'.mat' # grab validation file name based on beginning of input file name        
-        try:
-            defaultData = loadmat('Validation/'+validationFileName)
-            assert defaultData['elData'].shape == electrodogram.shape,'Electrodogram shape does not match validation file. Expected: '+f"{defaultData['elData'].shape}"+', found '+f'{electrodogram.shape}'
-        except FileNotFoundError:
-            if par['skipValidation']:
-                defaultData['elData'] = electrodogram  # if data flag for skipping validation files is set load an empty matrix (useful for processing non-official/unvalidated inputs)
-                warnings.warn('No Validation file found! Validation process will be skipped, results may not be accepted for final entry submission!!')
-            else:
-                raise FileNotFoundError('Could not find validation file for '+sourceFileName[sourceFileName.rfind('/')+1:]+'. Expected to find '+'Validation/'+validationFileName)
-        
-        # Next check the filestring extension 
+    if type(electrodogram) is str:      
+        # Check the filestring extension 
         if electrodogram[-3:] == '.h5':
             with h5py.File(electrodogram,'r') as f:
                 if len(list(f.keys())) == 1:
                     electrodogram = np.array(f.get(list(f.keys())[0]))
-                    if 16 in electrodogram.shape and len(electrodogram.shape) == 2:
-                        if electrodogram.shape[0] == 16:
-                            pass
-                        else:
-                            electrodogram = electrodogram.T
-                    else:
-                        #TODO can refine error message to specify exact sample number by comparing to loaded validation matrix size
-                        raise ValueError('Electrodogram must be shape 16 x n, (16 electrodes x n total samples)') 
+                    f.close()
                 else:
+                    f.close()
                     raise ValueError('HDF5 File contains multiple datasets. File should contain only the electrode pulse matrix.')
-                f.close()
         elif electrodogram[-4:] == '.mat':
             rawData = loadmat(electrodogram)
             if 'elData' in rawData.keys():                 
                 electrodogram = rawData['elData']            
                 if type(electrodogram) is sparse.csc.csc_matrix:
                     electrodogram = electrodogram.A
-                    if 16 in electrodogram.shape and len(electrodogram.shape) == 2:
-                            if electrodogram.shape[0] == 16:
-                                pass
-                            else:
-                                electrodogram = electrodogram.T
-                    else:
-                        #TODO can refine error message to specify exact sample number by comparing to loaded validation matrix size
-                        raise ValueError('Electrodogram must be shape 16xn, (16 electrodes x n total samples)')
             else:
                 raise KeyError('The supplied .mat file must contain data saved as "elData"')
         elif electrodogram[-4:] == '.npy':
             rawData = np.load(electrodogram);
-            electrodogram = rawData
-            if 16 in electrodogram.shape and len(electrodogram.shape) == 2:
-                if electrodogram.shape[0] == 16:
-                    pass
-                else:
-                    electrodogram = electrodogram.T
-            else:
-                #TODO can refine error message to specify exact sample number by comparing to loaded validation matrix size
-                raise ValueError('Electrodogram must be shape 16xn, (16 electrodes x n total samples)')
-            
+            electrodogram = rawData            
         elif electrodogram[-4:] == '.npz':
             rawData = sparse.load_npz(electrodogram)
-            electrodogram = rawData.A  
-            if 16 in electrodogram.shape and len(electrodogram.shape) == 2:
-                if electrodogram.shape[0] == 16:
-                    pass
-                else:
-                    electrodogram = electrodogram.T
-            else:
-                #TODO can refine error message to specify exact sample number by comparing to loaded validation matrix size
-                raise ValueError('Electrodogram must be shape 16xn, (16 electrodes x n total samples)')
-            
-            
+            electrodogram = rawData.A    
         else:
             raise ValueError('Invalid File format: Only .npy, scipy sparse .npz, .h5, or .mat files are allowed')
-    elif type(electrodogram) is np.ndarray:
-        inputFileName = sourceFileName[sourceFileName.rfind('/')+1:sourceFileName.rfind('.wav')]
-        validationFileName = inputFileName+'_validation.mat'
-        try:
-            defaultData = loadmat('Validation/'+validationFileName)
-            assert defaultData['elData'].shape == electrodogram.shape,'Electrodogram shape does not match validation file. Expected: '+f"{defaultData['elData'].shape}"+', found '+f'{electrodogram.shape}'
-        except FileNotFoundError:
-            if par['skipValidation']:
-                defaultData['elData'] = electrodogram  # if data flag for skipping validation files is set load an empty matrix (useful for processing non-official/unvalidated inputs)
-                warnings.warn('No Validation file found! Validation process will be skipped, results may not be accepted for final entry submission!!')
-            else:
-                raise FileNotFoundError('Could not find validation file for '+sourceFileName[sourceFileName.rfind('/')+1:]+'. Expected to find '+'Validation/'+validationFileName)
-        
+    elif type(electrodogram) is np.ndarray:      
+        pass
+    else:
+        raise ValueError('Expected str or numpy ndarray inputs.')
+    
+    if len(electrodogram.shape) == 2:
         if 16 in electrodogram.shape:
             if electrodogram.shape[0] == 16:
                 pass
             else:
                 electrodogram = electrodogram.T
         else:
-            #TODO can refine error message to specify exact sample number by comparing to loaded validation matrix size
-            raise ValueError('Electrodogram must be shape 16xn, (16 electrodes x n total samples)')
+            raise ValueError('Electrodogram should have 16 channels (rows). Instead found: '+f'{electrodogram.shape[0]}')
     else:
-        raise ValueError('Expected str or numpy ndarray inputs.')
-    
-    # validate type, shape, and sampling rate of elgram so that comparison with standard model can take place
-    assert isinstance(electrodogram,np.ndarray), 'Electrodogram must be a numpy array'  # deprecate this
-    assert len(electrodogram.shape)==2, 'Electrodogram must be a 2 dimensional array'   # deprecate this
-    assert par['elGramRate'] == 55556, 'Electrodogram must be generated with 55556 Hz rate'
-    
-    # flip matrix so that rows = 16 if necessary
-    if electrodogram.shape[0] != 16:  # this is redundant
-        assert electrodogram.shape[1] == 16, 'Electrodogram dimensions should be: 16 x numSamples, currently: '+f'{electrodogram.shape}'
-        electrodogram = electrodogram.T
-       
-    # load validation data for comparison
-    # inputFileName = par['parent']['wavFile']
-    inputFileName = sourceFileName[sourceFileName.rfind('/')+1:sourceFileName.rfind('.wav')]
-    validationFileName = inputFileName+'_validation.mat'
-    
+        raise ValueError('Electrodogram should be a 2 dimensional array! Input shape: '+f'{electrodogram.shape}')
 
+    
+    
+    # validate type, shape, and sampling rate of elgram so that comparison with standard model can take place  
+    assert par['elGramFs'] == 55556, 'Electrodogram must be generated with 55556 Hz rate'    
+    assert validationData.shape[1]-electrodogram.shape[1] <= lengthTol, 'Electrodogram should have approximately '+f'{validationData.shape[1]}'+' columns. (+-'+f'{lengthTol}'+') Instead contains: '+'f{electrodogram.shape[0]}'
+    
+    
+    # validate that electrode matrix is charge balanced in each channel
+    eps = np.finfo(float).eps
+    chargeBalance = np.abs(np.sum(electrodogram,axis=1)) > eps
+    
+    if np.sum(chargeBalance) == 1:
+        ValueError('Electrodogram is not charge-balanced! Channel output does not sum to zero for channel: '+f'{np.where(chargeBalance > 0)[0]}')
+    elif np.sum(chargeBalance) > 1:
+        ValueError('Electrodogram is not charge-balanced! Channel output does not sum to zero for channels: '+f'{np.where(chargeBalance > 0)[0]}')
+        
+     
+    # compute cross-correlation based matrix subtraction to estimate channel similarity
+    outputDifference = np.array([])
+    if skipMatrixSubtraction == True:
+        pass
+    else:
+        outputDifference = np.array([])
+        if validationData.shape == electrodogram.shape:
+            outputDifference = np.sum(np.abs(electrodogram-validationData),axis=1).reshape(16,1)
+        else:
+            pass
+            # #cross-correlation based similarity comparison, doing this as in matlab is too slow!
+            # for i in np.arange(validationData.shape[0]):            
+            #     outputDifference[i] = xCorrSimilarity(validationData[i,:],electrodogram[i,:])
 
         
-    # calculate absolute differences between standard and test algorithm outputs
-    outputDifference = np.sum(electrodogram-defaultData['elData'],axis=1).reshape(16,1)
+
     
     # Unless override is enabled, if any channel is not sufficiently different from the default algorithm produce a warning, otherwise save the output
-    if par['saveWithoutValidation'] == True:
+    if par['saveIfSimilar'] == True:
         if np.any(outputDifference < par['differenceThreshold']):
             channels = np.where(outputDifference < par['differenceThreshold'])[0]
             if len(channels) == 1:           
-                warnings.warn('Channel ' + f'{channels}' ' is too similar to the default output.') 
+                print('Channel ' + f'{channels}' ' is too similar to the default output.') 
             else:               
-                warnings.warn('Channels ' + f'{channels}' ' are too similar to the default output.')
+                print('Channels ' + f'{channels}' ' are too similar to the default output.')
         
         # convert to csc sparse matrix for reduced file size
         data2save = sparse.csc_matrix(electrodogram,dtype=np.float)
@@ -150,15 +173,15 @@ def validateOutputFunc(par,electrodogram,sourceFileName):
             sparse.save_npz('Output/'+inputFileName+'_elGramOutput_'+par['outFile'],data2save) 
 
                
-        return False,True      
-    elif par['saveWithoutValidation'] == False:
+        return True      
+    elif par['saveIfSimilar'] == False:
         channels = np.where(outputDifference < par['differenceThreshold'])[0]
         if len(channels) > par['maxSimilarChannels']:
             if len(channels) == 1:           
                 warnings.warn('Channel ' + f'{channels}' ' is too similar to the default output. DATA NOT SAVED!') 
             else:               
                 warnings.warn('Channels ' + f'{channels}' ' are too similar to the default output. DATA NOT SAVED!')
-            return False,False 
+            return False 
 
         else:
             # convert to csc sparse matrix for reduced file size
@@ -172,7 +195,7 @@ def validateOutputFunc(par,electrodogram,sourceFileName):
                 sparse.save_npz('Output/'+inputFileName+'_elGramOutput_'+timestr,data2save)      
             else:
                 sparse.save_npz('Output/'+inputFileName+'_elGramOutput_'+par['outFile'],data2save)
-            return True,True
+            return True
         
     
             

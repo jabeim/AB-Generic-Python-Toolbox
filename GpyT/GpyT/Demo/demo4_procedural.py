@@ -171,11 +171,11 @@ def demo4_procedural():
     
     parValidate = {
             'parent' : parStrat,
-            'skipValidation' : False,  # If True: Validation will ignore missing validation files and proceed as if default matrix is too similar to default processing (return isValid=False). Useful if testing with non-official/unvalidated audio source material.
-            'saveWithoutValidation' : True,  # save even if the are too similar to default strategy
+            'lengthTolerance' : 15, 
+            'saveIfSimilar' : True,  # save even if the are too similar to default strategy
             'differenceThreshold' : 1,
             'maxSimilarChannels' : 8,
-            'elGramRate' : parElectrodogram['outputFs'],
+            'elGramFs' : parElectrodogram['outputFs'],
             'outFile' : ''            
             }
 
@@ -233,7 +233,7 @@ def demo4_procedural():
     results['elGram'] = f120ElectrodogramFunc(parElectrodogram,results['sig_ft_ampWords'])    
    
     # # load output of default processing strategy to compare with  results['elGram'], return errors if data matrix is an invalid shape/unacceptable to the vocoder,save results['elGram'] to a file
-    results['isValid'], results['outputSaved'] = validateOutputFunc(parValidate,results['elGram'],results['sourceName']); 
+    results['outputSaved'] = validateOutputFunc(parValidate,results['elGram'],results['sourceName']); 
     
     # process electrodogram potentially saving as a file (change to saveOutput=True)
     results['audioOut'],results['audioFs'] = vocoderFunc(results['elGram'],saveOutput=False)
