@@ -33,14 +33,14 @@ def demo4_procedural():
     
     parStrat = {
             'wavFile' : 'Sounds/AzBio_3sent.wav',
-            'fs' : 17400,
+            'fs' : 17400, # this value matches implant internal audio rate. incoming wav files resampled to match
             'nFft' : 256,
             'nHop' : 20,
-            'nChan' : 15,
+            'nChan' : 15, # do not change
             'startBin' : 6,
             'nBinLims' : np.array([2,2,1,2,2,2,3,4,4,5,6,7,8,10,56]),
             'window' : stratWindow,
-            'pulseWidth' : 18,
+            'pulseWidth' : 18, # DO NOT CHANGE
             'verbose' : 0
             }
     
@@ -164,18 +164,18 @@ def demo4_procedural():
     parElectrodogram = {
             'parent' : parStrat,
             'cathodicFirst' : True,
-            'channelOrder' : np.array([1,5,9,13,2,6,10,14,3,7,11,15,4,8,12]),
+            'channelOrder' : np.array([1,5,9,13,2,6,10,14,3,7,11,15,4,8,12]), # DO NOT CHANGE (different order of pulses will have no effect in vocoder output)
             'enablePlot' : True,
-            'outputFs' : 55556,
-            'resistance' : 10e3
+            'outputFs' : 55556, # DO NOT CHANGE (validation depends on matched output rate, vocoder would not produce different results at higher or lower Fs when parameters match accordingly)
             }
     
     parValidate = {
             'parent' : parStrat,
-            'saveWithoutValidation' : True,
+            'lengthTolerance' : 15, 
+            'saveIfSimilar' : True,  # save even if the are too similar to default strategy
             'differenceThreshold' : 1,
             'maxSimilarChannels' : 8,
-            'elGramRate' : parElectrodogram['outputFs'],
+            'elGramFs' : parElectrodogram['outputFs'],
             'outFile' : ''            
             }
 
@@ -183,7 +183,7 @@ def demo4_procedural():
     
 
     # read specified wav file and scale
-    results['sig_smp_wavIn'] = readWavFunc(parReadWav)     # load the file specified in parReadWav
+    results['sig_smp_wavIn'],results['sourceName'] = readWavFunc(parReadWav)     # load the file specified in parReadWav
 #    results['sig_smp_wavIn'] = readMatFunc(parReadWav)     # read the resampled data from matlab script to ensure equivalence for debugging  
     
     
@@ -232,11 +232,11 @@ def demo4_procedural():
     # convert amplitude words to simulated electrodogram for vocoder imput
     results['elGram'] = f120ElectrodogramFunc(parElectrodogram,results['sig_ft_ampWords'])    
    
-    # validate output and save data
-    results['saved'] = validateOutputFunc(parValidate,results['elGram']);
+    # # load output of default processing strategy to compare with  results['elGram'], return errors if data matrix is an invalid shape/unacceptable to the vocoder,save results['elGram'] to a file
+    results['outputSaved'] = validateOutputFunc(parValidate,results['elGram'],results['sourceName']); 
     
-    # process electrodogram
-    results['audioOut'],results['audioFs'] = vocoderFunc(results['elGram'],captFs=parElectrodogram['outputFs'],resistorVal=parElectrodogram['resistance']/1e3)
+    # process electrodogram potentially saving as a file (change to saveOutput=True)
+    results['audioOut'],results['audioFs'] = vocoderFunc(results['elGram'],saveOutput=False)
     
 
     

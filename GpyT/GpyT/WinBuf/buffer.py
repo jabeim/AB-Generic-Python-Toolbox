@@ -50,8 +50,7 @@ def buffer(X, n, p=0,opt=None):
         
     
     N = n;
-    M= np.ceil(len(X)/(n-p)).astype(int);
-    
+    M= np.ceil(len(X)/(n-p)).astype(int); 
     b = np.zeros((N,M))
  
     

@@ -102,10 +102,10 @@ def dualLoopTdAgcFunc(par,wavIn,*args):
     bAttFast = np.exp(-decFact/fs*1000/par['tauAttFast'])
     bRelFast = np.exp(-decFact/fs*1000/par['tauRelFast'])
     
-    nSamp = ctrl.size
-   
-    nFrame = np.ceil(nSamp/decFact).astype(int);
     
+    nSamp = ctrl.size
+    nFrame = np.ceil(nSamp/decFact).astype(int);
+
     # preallocation 
     agc = {}
     
@@ -190,8 +190,6 @@ def dualLoopTdAgcFunc(par,wavIn,*args):
         agc['EnvFast'][iFrame] = envFast_i;
     
     # apply gain
-    
-    
     idxExpand = np.concatenate((np.ceil(np.arange(1/decFact,nFrame+1/decFact,1/decFact)),np.array([nFrame]))).astype(int)
     agc['smpGain'] = agc['G'][idxExpand-1];
     agc['smpGain']  = signal.lfilter(np.ones(gainBufLen)/gainBufLen,1,agc['smpGain'] )

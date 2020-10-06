@@ -13,7 +13,7 @@ from scipy.interpolate import interp1d
 def f120ElectrodogramFunc(par,ampIn):
     strat = par['parent']
     fsOut = par['outputFs']
-    rOut = par['resistance']
+    # rOut = par['resistance']
     nFrameFt = ampIn.shape[1]
     nChan = strat['nChan']
     pulseWidth = strat['pulseWidth']
@@ -27,6 +27,8 @@ def f120ElectrodogramFunc(par,ampIn):
     
     
     nFrameOut = nFrameFt*phasesPerCyc
+    
+    
     idxLowEl = np.arange(nChan)
     idxHighEl = np.arange(nChan)+1
     nEl = 16
@@ -55,8 +57,8 @@ def f120ElectrodogramFunc(par,ampIn):
     else:
         tOut = np.arange(nFrameOut)*pulseWidth*1e-6
         
-    if rOut:
-        elGram = elGram*1e-6*rOut
+    # if rOut:
+    #     elGram = elGram*1e-6*rOut
         
     # lets skip the step of making the elGram sparse first
     

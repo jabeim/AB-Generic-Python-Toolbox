@@ -7,8 +7,7 @@ Created on Mon Apr 22 11:29:54 2019
 import time
 import numpy as np
 import scipy as sp
-import scipy.io as sio
-import scipy.io.wavfile
+import scipy.io
 import scipy.interpolate
 import h5py
 from .vocoderTools import ElFieldToActivity,ActivityToPower, NeurToBinMatrix, generate_cfs
@@ -20,6 +19,7 @@ def vocoderFunc(electrodogram,**kwargs):
     saveOutput = kwargs.get('saveOutput',False)
     outputFile = kwargs.get('outputFile',None)
     
+    # these parameters will be used by the website. DO NOT CHANGE FROM DEFAULT VALUES
     captFs = 55556
     nCarriers = 20   
     elecFreqs = None
@@ -31,7 +31,7 @@ def vocoderFunc(electrodogram,**kwargs):
     tAvg = 0.005
     tauEnvMS = 10
     nl = 5
-    resistorValue = 10
+   
 
 
 #%% Process electrodogram before proceeding to vocoder pipeline
@@ -51,7 +51,7 @@ def vocoderFunc(electrodogram,**kwargs):
                     raise ValueError('HDF5 File contains multiple datasets. File should contain only the electrode pulse matrix.')
                 f.close()
         elif electrodogram[-4:] == '.mat':
-            rawData = sio.loadmat(electrodogram)
+            rawData = scipy.io.loadmat(electrodogram)
             if 'elData' in rawData.keys():                 
                 electrodogram = rawData['elData']            
                 if type(electrodogram) is sp.sparse.csc.csc_matrix:
@@ -106,7 +106,8 @@ def vocoderFunc(electrodogram,**kwargs):
 
 
 #%% Scale and preprocess electrodogram data     
-    scaletoMuA = 500/resistorValue
+    # scaletoMuA = 500/resistorValue
+    scaletoMuA = 1;
 #    electrodeAmp = electrodogram[:,1:] # the first column in the matrix is actually channel similarity.
     electrodeAmp =electrodogram
     nElec = electrodeAmp.shape[0]
@@ -125,7 +126,7 @@ def vocoderFunc(electrodogram,**kwargs):
     if spread is None:
         elecPlacement = np.zeros(nElec).astype(int) # change to zeros to reflect python indexing
         spreadFile = 'MatlabSupportFiles/spread.mat'
-        spread = sio.loadmat(spreadFile)
+        spread = scipy.io.loadmat(spreadFile)
     else: # This seciont may need reindexing if the actual spread mat data is passed through, for now let use the spread.mat data
         elecPlacement = spread['elecPlacement']
         

@@ -14,8 +14,7 @@ def readWavFunc(par):
     name = par['parent']['wavFile']
     stratFs = par['parent']['fs']
     
-    [srcFs,signalIn] = wavread(name)
-    
+    [srcFs,signalIn] = wavread(name)    
     # rescale from integer words to float for audio processing
     
     if signalIn.dtype == 'uint8':
@@ -54,7 +53,7 @@ def readWavFunc(par):
         else:
             signalIn = resample(signalIn,stratFs,srcFs,axis=1)
             
-    return signalIn
+    return signalIn, name
     
         
     
