@@ -15,7 +15,7 @@ from WinBuf.winBufFunc import winBufFunc
 from Filterbank.fftFilterbankFunc import fftFilterbankFunc
 from Filterbank.hilbertEnvelopeFunc import hilbertEnvelopeFunc
 from Filterbank.channelEnergyFunc import channelEnergyFunc
-from Clearvoice.clearvoiceFunc import clearvoiceFunc
+from NoiseReduction.noiseReductionFunc import noiseReductionFunc
 from PostFilterbank.specPeakLocatorFunc import specPeakLocatorFunc
 from PostFilterbank.currentSteeringWeightsFunc import currentSteeringWeightsFunc
 from PostFilterbank.carrierSynthesisFunc import carrierSynthesisFunc
@@ -107,7 +107,7 @@ def demo4_procedural():
             'gainDomain' : 'linear'
             }
     
-    parClearVoice = {
+    parNoiseReduction = {
             'parent' : parStrat,
             'gainDomain' : 'log2',
             'tau_speech' : .0258,
@@ -127,7 +127,7 @@ def demo4_procedural():
     parPeak = {
             'parent' : parStrat,
             'binToLocMap' : np.concatenate((np.zeros(6,),np.array([256, 640, 896, 1280, 1664, 1920, 2176,       # 1 x nBin vector of nominal cochlear locations for the center frequencies of each STFT bin
-                                            2432, 2688, 2944, 3157, 3328, 3499, 3648, 3776, 3904, 4032,         # as in firmware; values from 0 .. 15 (originally in Q9 format)
+                                            2432, 2688, 2944, 3157, 3328, 3499, 3648, 3776, 3904, 4032,         # values from 0 .. 15 in Q9 format
                                             4160, 4288, 4416, 4544, 4659, 4762, 4864, 4966, 5069, 5163,         # corresponding to the nominal steering location for each 
                                             5248, 5333, 5419, 5504, 5589, 5669, 5742, 5815, 5888, 5961,         # FFT bin
                                             6034, 6107, 6176, 6240, 6304, 6368, 6432, 6496, 6560, 6624, 
@@ -202,9 +202,9 @@ def demo4_procedural():
     results['sig_frm_hilbert'] = hilbertEnvelopeFunc(parHilbert,results['sig_frm_fft']) # get hilbert envelopes   
     results['sig_frm_energy'] = channelEnergyFunc(parEnergy,results['sig_frm_fft'],results['agc']['smpGain']) # estimate channel energy
 
-    # apply clearvoice noise reduction
-    results['sig_frm_gainCv'] = clearvoiceFunc(parClearVoice,results['sig_frm_energy'])[0] # estimate noise reduction
-    results['sig_frm_hilbertMod'] = results['sig_frm_hilbert']+results['sig_frm_gainCv'] # apply noise reduction gains to envelope
+    # apply noise reduction
+    results['sig_frm_gainNr'] = noiseReductionFunc(parNoiseReduction,results['sig_frm_energy'])[0] # estimate noise reduction
+    results['sig_frm_hilbertMod'] = results['sig_frm_hilbert']+results['sig_frm_gainNr'] # apply noise reduction gains to envelope
     
     # subsample every third FFT input frame
     results['sig_3frm_fft'] = results['sig_frm_fft'][:,2::3]

@@ -5,19 +5,16 @@ Created on Fri Sep  6 10:19:09 2019
 @author: beimx004
 """
 
-#[G_out, A_out, Vn, Vs, Hold] = clearvoiceFunc(par, A)
+#[G_out, A_out, Vn, Vs, Hold] = noiseReductionFunc(par, A)
 #
-#Compute channel-by-channel gains as in ClearVoice. The gain function is 
-#implemented following specification D000001063 (L.Litvak, 2009), with 
-#added freedom in choosing the shape parameters. Note that AGC gain input
-#is expected at audio sample rate (firmware uses decimated gain).
+#Compute channel-by-channel noise reduction gains.
 #
 #INPUT:
 #  par - parameter object / struct
 #  A - nCh x nFrames matrix of channel amplitudes (sqrt(power), linearly scaled)
 #
 #OUTPUT:
-#  G_out - nCh x nFrames matrix of ClearVoice gains (domain determined by par.gainDomain)
+#  G_out - nCh x nFrames matrix of noise reduction gains (domain determined by par.gainDomain)
 #  A_out - nCh x nFrames matrix of channel amplitudes (sqrt(power), linearly scaled)
 #  Vn   - nCh x nFrames matrix of noise estimates
 #  Vs   - nCh x nFrames matrix of speech estimates
@@ -38,26 +35,17 @@ Created on Fri Sep  6 10:19:09 2019
 #  slopeFact  - factor determining the steepness of the gain curve [> 0]
 #  noiseEstDecimation - down-sampling factor (re. frame rate) for noise estimate [int > 0]
 #  enableContinuous - save final state for next execution? [boolean]
-#
-#Change log:
-#  30 Jan 2012, P.Hehrmann - created
-#  18 Jun 2013, S.Fredelake - added additional outputs V_nOut, V_sOut
-#  18 Jun 2013, PH - bug fix: reset of hold counter
-#  23 Jan 2018, PH - log-domain averaging (as on real device)
-#  24 Jan 2018, PH - enableContinuous flag
-#  02 Aug 2019, PH - added noiseEstDecimation and gainDomain parameter 
-#                  - changed function interface
-#  15 Aug 2019, PH - swapped output arguments (G and A)
+
 import numpy as np
 
 
-def cvGainFunc(par,gMin,SNR):
+def nrGainFunc(par,gMin,SNR):
     SNR = np.minimum(np.maximum(SNR,par['snrFloor']),par['snrCeil'])
     g__ = gMin+np.divide((1-gMin),1+np.exp(-par['slopeFact']*(SNR-par['snrSlope'])));
     return g__
 
 
-def clearvoiceFunc(par,A):
+def noiseReductionFunc(par,A):
     from Utility.checkParamFields import checkParamFields
     # check input
     checkParamFields(par,['tau_speech','tau_noise','durHold','threshHold',
@@ -127,7 +115,7 @@ def clearvoiceFunc(par,A):
         
 
         
-        G[:,iFrame] = cvGainFunc(par,gMin,SNR)            
+        G[:,iFrame] = nrGainFunc(par,gMin,SNR)            
         Vn_out[:,iFrame] = V_n;
         Vs_out[:,iFrame] = V_s
         Hold_out[:,iFrame] = Hold
