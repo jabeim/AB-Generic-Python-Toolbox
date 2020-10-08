@@ -32,7 +32,7 @@ def demo4_procedural():
     stratWindow = stratWindow.reshape(1,stratWindow.size)
     
     parStrat = {
-            'wavFile' : 'Sounds/AzBio_3sent.wav',
+            'wavFile' : 'Sounds/AzBio_3sent_65dBSPL.wav',
             'fs' : 17400, # this value matches implant internal audio rate. incoming wav files resampled to match
             'nFft' : 256,
             'nHop' : 20,
@@ -183,15 +183,12 @@ def demo4_procedural():
     
 
     # read specified wav file and scale
-    results['sig_smp_wavIn'],results['sourceName'] = readWavFunc(parReadWav)     # load the file specified in parReadWav
+    results['sig_smp_wavIn'],results['sourceName'] = readWavFunc(parReadWav)     # load the file specified in parReadWav; assume correct scaling in wav file (111.6 dB SPL peak full-scale)
 #    results['sig_smp_wavIn'] = readMatFunc(parReadWav)     # read the resampled data from matlab script to ensure equivalence for debugging  
     
     
-    results['sig_smp_wavScaled'] = results['sig_smp_wavIn']/np.sqrt(np.mean(results['sig_smp_wavIn']**2))*10**((65-111.6)/20) # set level to 65 dB SPL (assuming 111.6 dB full-scale)
-
-    
     # apply preemphasis
-    results['sig_smp_wavPre'] = tdFilterFunc(parPre,results['sig_smp_wavScaled']) # preemphahsis
+    results['sig_smp_wavPre'] = tdFilterFunc(parPre,results['sig_smp_wavIn']) # preemphahsis
   
     # automatic gain control    
     results['agc'] = dualLoopTdAgcFunc(parAgc,results['sig_smp_wavPre']) # agc
