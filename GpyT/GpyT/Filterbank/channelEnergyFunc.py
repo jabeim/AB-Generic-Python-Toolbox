@@ -21,7 +21,7 @@ def channelEnergyFunc(par,X,gAgc):
     lenAgcIn = gAgc.shape[1]
     if lenAgcIn > nFrames:
         gAgc = gAgc[:,nHop-1:-1:nHop]
-        assert np.abs(gAgc.shape[1]-nFrames) <= 2,'Length of sample-based gAgc input incompatable with nr. frames in STFT matrix: length/nHop must = approx nFrames.'
+        assert np.abs(gAgc.shape[1]-nFrames) <= 3,'Length of sample-based gAgc input incompatable with nr. frames in STFT matrix: length/nHop must = approx nFrames.'
         if gAgc.size < nFrames:
             gAgc = np.concatenate((gAgc,gAgc[:,-1:]*np.ones((gAgc.shape[0],nFrames-gAgc.shape[1]))),axis=1);
             gAgc = gAgc[:,0:nFrames];

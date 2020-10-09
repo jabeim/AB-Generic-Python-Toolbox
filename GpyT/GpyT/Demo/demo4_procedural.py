@@ -73,8 +73,8 @@ def demo4_procedural():
             'maxHold' : 1305,
             'g0' : 6.908,
             'fastThreshRel' : 8,
-            'cSlowInit' : 0,
-            'cFastInit' : 0,
+            'cSlowInit' : 0.5e-3,
+            'cFastInit' : 0.5e-3,
             'controlMode' : 'naida',
             'clipMode' : 'limit',
             'decFact' : 8,
@@ -121,7 +121,7 @@ def demo4_procedural():
             'slopeFact' : 0.2,
             'noiseEstDecimation': 1,
             'enableContinuous' : False,
-            'initState' : [],
+            'initState' : {'V_s' : -30*np.ones((15,1)),'V_n' : -30*np.ones((15,1))},
             }
     
     parPeak = {
@@ -147,13 +147,13 @@ def demo4_procedural():
             'fModOn' : .5,
             'fModOff': 1.0,
             'maxModDepth' : 1.0,
-            'deltaPhaseMax' : 1.0
+            'deltaPhaseMax' : 0.5
             }
     
     parMapper = {
             'parent' : parStrat,
             'mapM' : 500*np.ones(16),
-            'mapT' : 100*np.ones(16),
+            'mapT' : 50*np.ones(16),
             'mapIdr' : 60*np.ones(16),
             'mapGain' : 0*np.ones(16),
             'mapClip' : 2048*np.ones(16),
@@ -171,7 +171,7 @@ def demo4_procedural():
     
     parValidate = {
             'parent' : parStrat,
-            'lengthTolerance' : 15, 
+            'lengthTolerance' : 50, 
             'saveIfSimilar' : True,  # save even if the are too similar to default strategy
             'differenceThreshold' : 1,
             'maxSimilarChannels' : 8,

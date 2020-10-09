@@ -82,11 +82,17 @@ def noiseReductionFunc(par,A):
     HoldCount = np.zeros(nCh)+maxHold
     
     if len(par['initState']) > 0:
-        V_s = par['initState']['V_s']
-        V_n = par['initState']['V_n']
-        Hold = par['initState']['Hold']
-        HoldReady = par['initState']['HoldReady']
-        HoldCount = par['initState']['HoldCount']
+        if 'V_s' in par:
+            V_s = par['initState']['V_s']
+        if 'V_n' in par:
+            V_n = par['initState']['V_n']
+        if 'Hold' in par:
+            Hold = par['initState']['Hold']
+        if 'HoldReady' in par:
+            HoldReady = par['initState']['HoldReady']
+        if 'HoldCount' in par:
+            HoldCount = par['initState']['HoldCount']
+
         
     for iFrame in np.arange(nFrame):
         V_s = alpha_s*V_s+(1-alpha_s)*logA[:,iFrame]

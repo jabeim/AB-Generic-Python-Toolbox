@@ -45,7 +45,7 @@ import warnings
 import scipy.sparse as sparse
 from scipy.io.wavfile import read as wavread
 # from .validationTools import xCorrSimilarity
-from scipy.io import loadmat
+from scipy.io import loadmat, savemat
 
 
 
@@ -68,8 +68,8 @@ def validateOutputFunc(par,electrodogram,sourceFileName):
     except FileNotFoundError:
             validationData = electrodogram  # if data flag for skipping validation files is set load an empty matrix (useful for processing non-official/unvalidated inputs)
             warnings.warn('No Validation file found! Validation process will be skipped, results may not be accepted for final entry submission!!')
-            sourceData,Fs = wavread(sourceFileName);
-            validationData = np.zeros((16,np.fix(len(sourceData)/Fs*55556)))
+            [Fs,sourceData] = wavread(sourceFileName);
+            validationData = np.zeros((16,np.fix(len(sourceData)/Fs*55556).astype(int)))
             skipMatrixSubtraction = True
     except:
          raise
@@ -163,12 +163,12 @@ def validateOutputFunc(par,electrodogram,sourceFileName):
         # convert to csc sparse matrix for reduced file size
         data2save = sparse.csc_matrix(electrodogram,dtype=np.float)
         data2save.eliminate_zeros()
-        
+
         # save in matlab compatible format for processing later
         if len(par['outFile']) == 0:
             # use timestamp format if no filename specified
             timestr = time.strftime("%Y%m%d_%H%M%S")
-            sparse.save_npz('Output/'+inputFileName+'_elGramOutput_'+timestr,data2save)            
+            sparse.save_npz('Output/'+inputFileName+'_elGramOutput_'+timestr,data2save)          
         else:
             sparse.save_npz('Output/'+inputFileName+'_elGramOutput_'+par['outFile'],data2save) 
 
@@ -192,7 +192,7 @@ def validateOutputFunc(par,electrodogram,sourceFileName):
             if len(par['outFile']) == 0:
                 # use timestamp format if no filename specified
                 timestr = time.strftime("%Y%m%d_%H%M%S") 
-                sparse.save_npz('Output/'+inputFileName+'_elGramOutput_'+timestr,data2save)      
+                sparse.save_npz('Output/'+inputFileName+'_elGramOutput_'+timestr,data2save)
             else:
                 sparse.save_npz('Output/'+inputFileName+'_elGramOutput_'+par['outFile'],data2save)
             return True

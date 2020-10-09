@@ -196,8 +196,25 @@ def dualLoopTdAgcFunc(par,wavIn,*args):
     
     agc['smpGain']  = agc['smpGain'] [1:nSamp+2-gainBufLen];
     agc['smpGain']  = agc['smpGain'] .reshape((1,agc['smpGain'] .size))
+    # agc['wavOut'] = np.concatenate((np.zeros((1,envBufLen)),wavIn[:,gainBufLen:nSamp-envBufLen+1]),axis=1)*agc['smpGain']
+   
+    wavPad = wavIn[:,np.max((0,gainBufLen-envBufLen)):gainBufLen]  
+    zeroPad = np.zeros((1,envBufLen-wavPad.shape[1]))
+    
+    wavOut = np.concatenate((zeroPad,wavPad,wavIn[:,gainBufLen:nSamp-envBufLen+1]),axis=1)*agc['smpGain']
+    
+    nOutTooShort = wavIn.shape[1]-wavOut.shape[1]
+    
+    if nOutTooShort == 0:
+        agc['wavOut'] = wavOut
+    elif nOutTooShort > 0:
+        agc['wavOut'] = np.concatenate((wavOut,agc['smpGain'][:,-1]*wavIn[:,nSamp-envBufLen+1:nSamp-envBufLen+nOutTooShort]),axis=1)
+    else:
+        agc['wavOut'] = wavOut[:,:wavIn.shape[1]]
         
-    agc['wavOut'] = np.concatenate((np.zeros((1,envBufLen)),wavIn[:,gainBufLen:nSamp-envBufLen+1]),axis=1)*agc['smpGain']
+        
+    
+    
     agc['wavOut'] = agc['wavOut'].reshape((1,agc['wavOut'].size))
     
     if par['clipMode'].lower() == 'none':
