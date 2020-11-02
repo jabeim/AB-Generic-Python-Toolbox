@@ -7,7 +7,7 @@ Created on Mon Nov  2 14:59:01 2020
 
 import subprocess
 import sys
-import os
+
 
 
 def install(package):
