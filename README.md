@@ -6,13 +6,14 @@ This toolbox is a WIP python port of the Advanced Bionics' Generic Matlab Toolbo
 
 The GPyT relies on several key packages which are not included in this repository in order to run. All required depencies can currently be installed from PyPi using pip. The full list of dependencies is included below.
  
-NumPy 1.16.2-1.19.2 - vector and matrix manipulations\
-SciPy 1.2.1-1.5.2 - signal processing and io functions\
-nnResample 0.2.4 - better audio resampling than scipy.resample\
-Numba 0.43.1-0.51.2 - Just In Time compilation to optimize portions of vocoder simulation\
+NumPy 1.16.2-1.19.2 - vector and matrix manipulations  
+SciPy 1.2.1-1.5.2 - signal processing and io functions  
+nnResample 0.2.4 - better audio resampling than scipy.resample  
+Numba 0.43.1-0.51.2 - Just In Time compilation to optimize portions of vocoder simulation  
 
-PyAudio 0.2.11 - audio playback package used only in the demo\
- pip installs of py audio may fail on python versions later than 3.7.3. This is because compilation on newer versions requires PortAudio. If using Anaconda/miniconda as a package manager 'conda install pyaudio' will install portaudio first.
+PyAudio 0.2.11 - audio playback package used only in the demo  
+  
+Pip installs of py audio may fail on python versions later than 3.7.3. This is because compilation on newer versions requires PortAudio. If using Anaconda/miniconda as a package manager 'conda install pyaudio' will install portaudio first.
  
 # Installing
 
