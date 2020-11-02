@@ -1,4 +1,4 @@
-# Generic Python Toolbox
+# Generic Python Toolbox (GpyT)
 
 This toolbox is a WIP python port of the Advanced Bionics' Generic Matlab Toolbox (GMT). The Generic Python Toolbox (GPyT) contains several functions used to emulate the current HiRes 120 processing strategy. Documentation for the Matlab model is included as the functions operate on identical inputs and outputs to their matlab counterparts. While the GMT supports an object orieted processing pipeline, the current implementation of GPyT is procedural. GPyT was developed using the Anaconda Python distribution with Python 3.7.3 and is tested to work on v3.8.
 
@@ -16,7 +16,7 @@ PyAudio 0.2.11 - audio playback package used only in the demo\
  
 # Installing
 
-To start working with the python code either Clone or Fork (github.com account required) this repository. Branching from this repository is not permitted. Then from the directory containing setup.py run the command `pip install -e .`
+To start working with the python code either Clone or Fork (github.com account required) this repository. Branching from this repository is not permitted. After downlodaing the files. Run the `installer.py` from its native directory to install an editable version of the package. Alternatively you can run: `pip install -e .` from the command line for the same functionality.
 
 # Documentation
  Documentation for the MATLAB toolbox from which the python code is originally based is included in the root directory. While some syntax may differ slightly, the functionality of the code between toolboxes is identical. 
