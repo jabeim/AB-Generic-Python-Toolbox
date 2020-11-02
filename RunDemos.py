@@ -3,11 +3,13 @@ import numpy as np
 import pyaudio as pa
 from scipy.signal import resample
 from scipy.io.wavfile import read as wavread
-from GpyT.Demo.demo4_procedural import demo4_procedural
+
+# load the toolbox package
+from GpyT.Demo.proceduralDemo import demo4_procedural
 
 playAudio = True
-results  = demo4_procedural()
 
+results  = demo4_procedural()
 
 if playAudio:
     wavIn = wavread(results['sourceName'])

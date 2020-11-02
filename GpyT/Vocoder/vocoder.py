@@ -127,7 +127,8 @@ def vocoderFunc(electrodogram,**kwargs):
 # load electric field spread data
     if spread is None:
         elecPlacement = np.zeros(nElec).astype(int) # change to zeros to reflect python indexing
-        spreadFile = 'GpyT/MatlabSupportFiles/spread.mat'
+        basepath = Path(__file__).parent.parent.absolute()
+        spreadFile = (basepath /'MatlabSupportFiles/spread.mat').__str__()
         spread = scipy.io.loadmat(spreadFile)
     else: # This seciont may need reindexing if the actual spread mat data is passed through, for now let use the spread.mat data
         elecPlacement = spread['elecPlacement']
@@ -220,7 +221,8 @@ def vocoderFunc(electrodogram,**kwargs):
 
     elData [elData < 0 ] = 0
     nlExp = np.exp(nl)
-# Generate output carrier tone complex
+    
+    # Generate output carrier tone complex
     nBlocks = (nFFT/2*(np.floor(elData.shape[1]/blkSize+1))).astype(int)-1
     tones = np.zeros((nBlocks,nCarriers))
     toneFreqs = generate_cfs(20,20000,nCarriers)
@@ -228,16 +230,8 @@ def vocoderFunc(electrodogram,**kwargs):
     
     for toneNum in np.arange(nCarriers):
         tones[:,toneNum] = np.sin(2.*np.pi*toneFreqs[toneNum]*t+phs[toneNum])   # random phase
-#        tones[:,toneNum] = np.sin(2.*np.pi*toneFreqs[toneNum]*t)               # sine phase
       
-    interpSpect = np.zeros((nCarriers,np.floor(elData.shape[1]/blkSize).astype(int)),dtype=complex)
-# electrode data cleaning
-#    for iChan in np.arange(0,elData.shape[0]):
-#        for iTime in np.arange(1,elData.shape[1]):
-#            if elData[iChan,iTime-1] > 5 and elData[iChan,iTime] > 5:
-#                elData[iChan,iTime-1] = max((elData[iChan,iTime-1],elData[iChan,iTime]))
-#                elData[iChan,iTime] = 0
-                
+    interpSpect = np.zeros((nCarriers,np.floor(elData.shape[1]/blkSize).astype(int)),dtype=complex)                
     fftFreqs = np.arange(1,np.floor(nFFT/2)+1)*audioFs/nFFT
 #%% Loop through frames of electrode data, convert to electric field, calculate neural spectrum
     for blkNumber in np.arange(1,(np.floor(elData.shape[1]/blkSize).astype(int))+1):
@@ -245,56 +239,31 @@ def vocoderFunc(electrodogram,**kwargs):
         timeIdx = np.arange((blkNumber-1)*blkSize+1,blkNumber*blkSize+1,dtype=int)-1
         efData = np.dot(normRamp,elData[:,timeIdx])              
         
-        
-        
-        # Normalized EF to neural activity
-        
-        
-#        efData = (efData-normOffset)
-#        electricField = np.maximum(0,efData)
-#        electricField = electricField / 0.4 * 0.5  
-#        activity = np.maximum(0,np.minimum(np.exp(nl*electricField),nlExp)-1)/(nlExp-1)
-        
-        
-        
-        
+        # Normalized EF to neural activity        
         activity = ElFieldToActivity(efData,normOffset,nl,nlExp)  # JIT optimized
         
-#        Neural activity to audio power       
+        # Neural activity to audio power       
         audioPwr = ActivityToPower(alpha,activity,audioPwr,blkSize)  # JIT optimized inner loop
                 
         # Average energy
         energy = np.sum(audioPwr,axis = 1)/mAvg        
-#        spect = np.multiply(np.dot(mNeurToBin,energy),np.exp(1j*phs))       # this is normally overlap-add synthesized, to match interpolation try changing timpoints of the main blk loop to match the overlap add times (-nFFT/2)
-        
-        # interpolate spectrum across frequency 
-#        fMagInt = sp.interpolate.interp1d(fftFreqs,np.abs(spect),fill_value = 'extrapolate')
-#        fPhaseInt = sp.interpolate.interp1d(fftFreqs,np.angle(spect),fill_value = 'extrapolate')
-        
+
+
         fMagInt = scipy.interpolate.interp1d(fftFreqs,np.dot(mNeurToBin,energy),fill_value = 'extrapolate')
         
         #calculate tone 
         toneMags = fMagInt(toneFreqs)
-#        tonePhases = fPhaseInt(toneFreqs)        
-#        interpSpect[:,blkNumber-1] = np.multiply(toneMags,np.exp(1j*tonePhases))
         interpSpect[:,blkNumber-1] = toneMags
         
 #%% interpolated spectral envelope tone scaling
     
     specVec = np.arange(blkNumber)*nFFT/2
     newTimeVec = np.arange(nBlocks-(nFFT/2-1))
-#    interpSpect2 = np.zeros((len(toneFreqs),len(newTimeVec)),dtype=complex)
     modTones = np.zeros((len(toneFreqs),len(newTimeVec)))
     for freq in np.arange(len(toneFreqs)):  
-#        fEnvMag = sp.interpolate.interp1d(specVec,np.abs(interpSpect[freq,:]),fill_value = 'extrapolate')
-#        fEnvPhs = sp.interpolate.interp1d(specVec,np.angle(interpSpect[freq,:]),fill_value = 'extrapolate')       
-#        tEnvMag = fEnvMag(newTimeVec)
-#        tEnvPhs = fEnvPhs(newTimeVec)       
-#        interpSpect2[freq,:] = tEnvMag*np.exp(1j*tEnvPhs)
-#        modTones[freq,:] = tones[:-(nFFT/2-1).astype(int),freq]*np.abs(interpSpect2[freq,:])
         fEnvMag = scipy.interpolate.interp1d(specVec,interpSpect[freq,:],fill_value = 'extrapolate')
         tEnvMag = fEnvMag(newTimeVec)
-        modTones[freq,:] = tones[:-(nFFT/2-1).astype(int),freq]*tEnvMag
+        modTones[freq,:] = tones[:-(nFFT/2-1).astype(int),freq]*np.abs(tEnvMag)
         
        
     audioOut = np.sum(modTones,axis=0)

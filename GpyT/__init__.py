@@ -13,6 +13,7 @@ from . import PostFilterbank
 
 # Import single function modules
 from .Agc.dualLoopTdAgc import dualLoopTdAgcFunc
+# from .Demo.proceduralDemo import demo4_procedural
 from .Electrodogram.f120Electrodogram import f120ElectrodogramFunc
 from .Mapping.f120Mapping import f120MappingFunc
 from .NoiseReduction.noiseReduction import noiseReductionFunc

@@ -65,7 +65,7 @@ def validateOutputFunc(par,electrodogram,sourceFileName):
     
     basepath = pathlib.Path(__file__).parent.parent.absolute()
     validationPath = (basepath / validationFileName).__str__()
-    print(validationPath)
+
     try:
         defaultData = loadmat(validationPath)
         if type(defaultData['elData']) is sparse.csc.csc_matrix:
