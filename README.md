@@ -16,7 +16,9 @@ PyAudio 0.2.11 - audio playback package used only in the demo\
  
 # Installing
 
-To start working with the python code either Clone or Fork (github.com account required) this repository. Branching from this repository is not permitted. After downlodaing the files. Run the `installer.py` from its native directory to install an editable version of the package. Alternatively you can run: `pip install -e .` from the command line for the same functionality.
+To start working with the python code either Clone or Fork (github.com account required) this repository. Branching from this repository is not permitted.   
+After downlodaing the files,run the script `installer.py` from its native directory to install an editable version of the package.  
+Alternatively you can run: `pip install -e .` from the command line for the same functionality.
 
 # Documentation
  Documentation for the MATLAB toolbox from which the python code is originally based is included in the root directory. While some syntax may differ slightly, the functionality of the code between toolboxes is identical. 
