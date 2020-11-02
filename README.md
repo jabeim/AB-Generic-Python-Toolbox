@@ -13,7 +13,7 @@ Numba 0.43.1-0.51.2 - Just In Time compilation to optimize portions of vocoder s
 
 PyAudio 0.2.11 - audio playback package used only in the demo  
   
-Pip installs of py audio may fail on python versions later than 3.7.3. This is because compilation on newer versions requires PortAudio. If using Anaconda/miniconda as a package manager 'conda install pyaudio' will install portaudio first.
+Pip installs of PyAudio may fail on python versions later than 3.7.3. This is because compilation on newer versions requires PortAudio. If using Anaconda/miniconda as a package manager 'conda install pyaudio' will install portaudio first.
  
 # Installing
 
