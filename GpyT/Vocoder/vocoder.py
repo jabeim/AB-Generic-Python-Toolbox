@@ -275,7 +275,8 @@ def vocoderFunc(electrodogram,**kwargs):
             outputFile = 'Output/VocoderOutput_'+timestr
         amplitude = np.iinfo(np.int16).max
         audioToSave = audioOut*amplitude
-        scipy.io.wavfile.write(outputFile+'.wav',audioFs.astype(int),np.int16(audioToSave))            
+        
+        scipy.io.wavfile.write(outputFile,audioFs.astype(int),np.int16(audioToSave))            
         
            
     return(audioOut,audioFs.astype(int))

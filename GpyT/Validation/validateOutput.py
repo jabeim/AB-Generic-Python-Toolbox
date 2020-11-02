@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-
+"""
 # saved = validateOutputFunc(par,electrodogram,sourceFileName)
 # 
 # Validates electrodogram outputs based on contest rules by ensuring that:
@@ -37,7 +37,7 @@
 #  OUTPUT:
 #     saved - boolean indicating whether or not the data in electrodogram was saved to an output file, true [bool]
 # 
-
+"""
 import time
 from os import path
 
@@ -176,7 +176,7 @@ def validateOutputFunc(par,electrodogram,sourceFileName):
         data2save.eliminate_zeros()
 
         # save in matlab compatible format for processing later
-        if len(par['outFile']) == 0:
+        if par['outFile'] is None:
             # use timestamp format if no filename specified
             timestr = time.strftime("%Y%m%d_%H%M%S")
             relativepath = 'Output/'+inputFileName+'_elGramOutput_'+timestr+'.npz'
@@ -201,7 +201,7 @@ def validateOutputFunc(par,electrodogram,sourceFileName):
             data2save.eliminate_zeros()
             
             # save in matlab compatible format for processing later
-            if len(par['outFile']) == 0:
+            if par['outFile'] is None:
                 # use timestamp format if no filename specified
                 timestr = time.strftime("%Y%m%d_%H%M%S") 
                 relativepath = 'Output/'+inputFileName+'_elGramOutput_'+timestr+'.npz'

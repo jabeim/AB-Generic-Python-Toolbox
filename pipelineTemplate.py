@@ -1,41 +1,44 @@
 # -*- coding: utf-8 -*-
 """
-Created on Wed Sep 18 14:55:51 2019
+Created on Mon Nov  2 16:02:50 2020
 
-@author: beimx004
+@author: Jbeim
+
+results = processingPipeline(sourceFile,[]elecOutputFile = None],[vocoderOutputFile = None])
+
+Provides the same signal processing as demo4_procedural with a more flexible front-end for specifying source and output filenames.
+
+REQUIRED INPUTS:
+    sourceFile: a string or path-like object specifying the location of an audio file to be loaded for processing.
+    
+OPTIONAL KWARG INPUTS:
+    elecOutputFile: a string specifying the full path where the output file should be created.
+        If elecOutputFile is not specified, a file will be saved to the GpyT package Output directory (/GpyT/Output/ by default)
+    vocoderOutputFile: a string specifying the full path where a .wav file containing the processed audio output should be creataed.
+        If vocoderOutputFile is not specified, no .wav output from the vocoder will be saved. 
+    
+OUTPUTS:
+    results: a dict containing output from each step of the proceessing chain
+
+
 """
-# Import necessary functions
+
 import numpy as np
-from pathlib import Path
+import GpyT
 
 
-# Import the rest of the GpyT subpackage functions for the demo here
-from ..Frontend.readWav import readWavFunc
-from ..Frontend.tdFilter import tdFilterFunc
-from ..Agc.dualLoopTdAgc import dualLoopTdAgcFunc
-from ..WinBuf.winBuf import winBufFunc
-from ..Filterbank.fftFilterbank import fftFilterbankFunc
-from ..Filterbank.hilbertEnvelope import hilbertEnvelopeFunc
-from ..Filterbank.channelEnergy import channelEnergyFunc
-from ..NoiseReduction.noiseReduction import noiseReductionFunc
-from ..PostFilterbank.specPeakLocator import specPeakLocatorFunc
-from ..PostFilterbank.currentSteeringWeights import currentSteeringWeightsFunc
-from ..PostFilterbank.carrierSynthesis import carrierSynthesisFunc
-from ..Mapping.f120Mapping import f120MappingFunc
-from ..Electrodogram.f120Electrodogram import f120ElectrodogramFunc
-from ..Validation.validateOutput import validateOutputFunc
-from ..Vocoder.vocoder import vocoderFunc
-
-
-
-def demo4_procedural():
-        
+def processingPipeline(sourceFile,**kwargs):
+    
+    # set default values for outputs to None
+    elecOutputFile = kwargs.get('elecOutputFile',None) # no specified output will result in saving in the package output directory
+    vocoderOutputFile = kwargs.get('vocoderOutputFile',None) # no specified output will result in no audio file being saved, audio data is returned in the results dict
+    
+    
     stratWindow = 0.5*(np.blackman(256)+np.hanning(256))
     stratWindow = stratWindow.reshape(1,stratWindow.size)  
-    basepath = Path(__file__).parent.parent.absolute()
     
     parStrat = {
-            'wavFile' : basepath / 'Sounds/AzBio_3sent_65dBSPL.wav',  # this should be a complete absolute path to your sound file of choice
+            'wavFile' : sourceFile,  # this should be a complete absolute path to your sound file of choice
             'fs' : 17400, # this value matches implant internal audio rate. incoming wav files resampled to match
             'nFft' : 256,
             'nHop' : 20,
@@ -179,36 +182,36 @@ def demo4_procedural():
             'differenceThreshold' : 1,
             'maxSimilarChannels' : 8,
             'elGramFs' : parElectrodogram['outputFs'],  # this is linked to the previous electrodogram generation step, it should always match [55556 Hz]
-            'outFile' : None           # This should be the full path including filename to a location where electrode matrix output will be saved after validation
+            'outFile' : elecOutputFile            # This should be the full path including filename to a location where electrode matrix output will be saved after validation
             }
 
     results = {} #initialize demo results structure
     
 
     # read specified wav file and scale
-    results['sig_smp_wavIn'],results['sourceName'] = readWavFunc(parReadWav)     # load the file specified in parReadWav; assume correct scaling in wav file (111.6 dB SPL peak full-scale)    
+    results['sig_smp_wavIn'],results['sourceName'] = GpyT.Frontend.readWavFunc(parReadWav)     # load the file specified in parReadWav; assume correct scaling in wav file (111.6 dB SPL peak full-scale)    
     
     # apply preemphasis
-    results['sig_smp_wavPre'] = tdFilterFunc(parPre,results['sig_smp_wavIn']) # preemphahsis
+    results['sig_smp_wavPre'] = GpyT.Frontend.tdFilterFunc(parPre,results['sig_smp_wavIn']) # preemphahsis
   
     # automatic gain control    
-    results['agc'] = dualLoopTdAgcFunc(parAgc,results['sig_smp_wavPre']) # agc
+    results['agc'] = GpyT.dualLoopTdAgcFunc(parAgc,results['sig_smp_wavPre']) # agc
     
     # window and filter into channels
-    results['sig_frm_audBuffers'] = winBufFunc(parWinBuf,results['agc']['wavOut']) # buffering
-    results['sig_frm_fft'] = fftFilterbankFunc(parFft,results['sig_frm_audBuffers']) # stft
-    results['sig_frm_hilbert'] = hilbertEnvelopeFunc(parHilbert,results['sig_frm_fft']) # get hilbert envelopes   
-    results['sig_frm_energy'] = channelEnergyFunc(parEnergy,results['sig_frm_fft'],results['agc']['smpGain']) # estimate channel energy
+    results['sig_frm_audBuffers'] = GpyT.winBufFunc(parWinBuf,results['agc']['wavOut']) # buffering
+    results['sig_frm_fft'] = GpyT.Filterbank.fftFilterbankFunc(parFft,results['sig_frm_audBuffers']) # stft
+    results['sig_frm_hilbert'] = GpyT.Filterbank.hilbertEnvelopeFunc(parHilbert,results['sig_frm_fft']) # get hilbert envelopes   
+    results['sig_frm_energy'] = GpyT.Filterbank.channelEnergyFunc(parEnergy,results['sig_frm_fft'],results['agc']['smpGain']) # estimate channel energy
 
     # apply noise reduction
-    results['sig_frm_gainNr'] = noiseReductionFunc(parNoiseReduction,results['sig_frm_energy'])[0] # estimate noise reduction
+    results['sig_frm_gainNr'] = GpyT.noiseReductionFunc(parNoiseReduction,results['sig_frm_energy'])[0] # estimate noise reduction
     results['sig_frm_hilbertMod'] = results['sig_frm_hilbert']+results['sig_frm_gainNr'] # apply noise reduction gains to envelope
     
     # subsample every third FFT input frame
     results['sig_3frm_fft'] = results['sig_frm_fft'][:,2::3]
     
     # find spectral peaks
-    results['sig_3frm_peakFreq'], results['sig_3frm_peakLoc'] = specPeakLocatorFunc(parPeak,results['sig_3frm_fft'])
+    results['sig_3frm_peakFreq'], results['sig_3frm_peakLoc'] = GpyT.PostFilterbank.specPeakLocatorFunc(parPeak,results['sig_3frm_fft'])
 
     # upsample back to full framerate (and add padding)
     results['sig_frm_peakFreq'] = np.repeat(np.repeat(results['sig_3frm_peakFreq'],1,axis=0),3,axis=1)
@@ -220,21 +223,24 @@ def demo4_procedural():
 
 
     # Calculate current steering weights and synthesize the carrier signals
-    results['sig_frm_steerWeights'] = currentSteeringWeightsFunc(parSteer,results['sig_frm_peakLoc']) # steer current based on peak location 
-    results['sig_ft_carrier'], results['sig_ft_idxFtToFrm'] = carrierSynthesisFunc(parCarrierSynth,results['sig_frm_peakFreq']) # carrier synthesis based on peak frequencies
+    results['sig_frm_steerWeights'] = GpyT.PostFilterbank.currentSteeringWeightsFunc(parSteer,results['sig_frm_peakLoc']) # steer current based on peak location 
+    results['sig_ft_carrier'], results['sig_ft_idxFtToFrm'] = GpyT.PostFilterbank.carrierSynthesisFunc(parCarrierSynth,results['sig_frm_peakFreq']) # carrier synthesis based on peak frequencies
 
     # map to f120 stimulation strategy
-    results['sig_ft_ampWords'] = f120MappingFunc(parMapper,results['sig_ft_carrier'],                             # combine envelopes, carrier, current steering weights and compute outputs
+    results['sig_ft_ampWords'] = GpyT.f120MappingFunc(parMapper,results['sig_ft_carrier'],                             # combine envelopes, carrier, current steering weights and compute outputs
                                       results['sig_frm_hilbertMod'],results['sig_frm_steerWeights'],results['sig_ft_idxFtToFrm'] )
 
     # convert amplitude words to simulated electrodogram for vocoder imput
-    results['elGram'] = f120ElectrodogramFunc(parElectrodogram,results['sig_ft_ampWords'])    
+    results['elGram'] = GpyT.f120ElectrodogramFunc(parElectrodogram,results['sig_ft_ampWords'])    
    
     # # load output of default processing strategy to compare with  results['elGram'], return errors if data matrix is an invalid shape/unacceptable to the vocoder,save results['elGram'] to a file
-    results['outputSaved'] = validateOutputFunc(parValidate,results['elGram'],results['sourceName']); 
+    results['outputSaved'] = GpyT.validateOutputFunc(parValidate,results['elGram'],results['sourceName']); 
     
     # process electrodogram potentially saving as a file (change to saveOutput=True)
-    results['audioOut'],results['audioFs'] = vocoderFunc(results['elGram'],saveOutput=False)
+    if vocoderOutputFile is None:
+        results['audioOut'],results['audioFs'] = GpyT.vocoderFunc(results['elGram'],saveOutput=False)
+    else:
+        results['audioOut'],results['audioFs'] = GpyT.vocoderFunc(results['elGram'],saveOutput=True,outputFile=vocoderOutputFile)
     
 
     
