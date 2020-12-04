@@ -43,7 +43,7 @@ def f120MappingFunc(par,carrier,env,weights,idxAudioFrame):
             mappedHi = (mapA[iElHi]*env[iChan,idxAudioFrame]+mapK[iElHi])*carrier[iChan,:]
             
         mappedLo = np.maximum(np.minimum(mappedLo,mapClip[iElLo]),0)
-        mappedHi = np.maximum(np.minimum(mappedLo,mapClip[iElHi]),0)
+        mappedHi = np.maximum(np.minimum(mappedHi,mapClip[iElHi]),0)
         
         ampWords[iAmpLo,:] = mappedLo*weights[iChan,idxAudioFrame]
         ampWords[iAmpHi,:] = mappedHi*weights[iChan+nChan,idxAudioFrame]
