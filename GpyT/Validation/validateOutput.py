@@ -82,8 +82,7 @@ def validateOutputFunc(par,electrodogram,sourceFileName):
             [Fs,sourceData] = wavread(sourceFileName.__str__());
             validationData = np.zeros((16,np.fix(len(sourceData)/Fs*55556).astype(int)))
             skipMatrixSubtraction = True
-    # except:
-    #      raise
+
          
     # if a string is passed, load that datafile according to extension string
     if type(electrodogram) is str:      
@@ -130,8 +129,10 @@ def validateOutputFunc(par,electrodogram,sourceFileName):
 
     
     
-    # validate type, shape, and sampling rate of elgram so that comparison with standard model can take place  
-    assert par['elGramFs'] == 55556, 'Electrodogram must be generated with 55556 Hz rate'    
+    # validate type, shape, and sampling rate of elgram so that comparison with standard model can take place
+    if par['elGramFs']:
+        assert np.round(par['elGramFs']) == 55556, 'Electrodogram must be generated with 55556 Hz rate'
+        
     assert validationData.shape[1]-electrodogram.shape[1] <= lengthTol, 'Electrodogram should have approximately '+f'{validationData.shape[1]}'+' columns. (+-'+f'{lengthTol}'+') Instead contains: '+'f{electrodogram.shape[0]}'
     
     
@@ -140,9 +141,9 @@ def validateOutputFunc(par,electrodogram,sourceFileName):
     chargeBalance = np.abs(np.sum(electrodogram,axis=1)) > eps
     
     if np.sum(chargeBalance) == 1:
-        ValueError('Electrodogram is not charge-balanced! Channel output does not sum to zero for channel: '+f'{np.where(chargeBalance > 0)[0]}')
+       warnings.warn('Electrodogram is not charge-balanced! Channel output does not sum to zero for channel: '+f'{np.where(chargeBalance > 0)[0]}')
     elif np.sum(chargeBalance) > 1:
-        ValueError('Electrodogram is not charge-balanced! Channel output does not sum to zero for channels: '+f'{np.where(chargeBalance > 0)[0]}')
+        warnings.warn('Electrodogram is not charge-balanced! Channel output does not sum to zero for channels: '+f'{np.where(chargeBalance > 0)[0]}')
         
      
     # compute cross-correlation based matrix subtraction to estimate channel similarity

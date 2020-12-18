@@ -169,7 +169,7 @@ def demo4_procedural():
             'cathodicFirst' : True,
             'channelOrder' : np.array([1,5,9,13,2,6,10,14,3,7,11,15,4,8,12]), # DO NOT CHANGE (different order of pulses will have no effect in vocoder output)
             'enablePlot' : True,
-            'outputFs' : 55556, # DO NOT CHANGE (validation depends on matched output rate, vocoder would not produce different results at higher or lower Fs when parameters match accordingly)
+            'outputFs' : [], # DO NOT CHANGE (validation depends on matched output rate, vocoder would not produce different results at higher or lower Fs when parameters match accordingly) [default: [],(uses pulse width ~ 55555.55)]
             }
     
     parValidate = {
