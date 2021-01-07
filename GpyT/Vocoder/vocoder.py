@@ -272,7 +272,8 @@ def vocoderFunc(electrodogram,**kwargs):
     if saveOutput:
         if outputFile is None:
             timestr = time.strftime("%Y%m%d_%H%M%S") 
-            outputFile = 'Output/VocoderOutput_'+timestr
+            relativeOutputFile = 'Output/VocoderOutput_'+timestr+".wav"
+            outputFile = (basepath / relativeOutputFile).__str__()
         amplitude = np.iinfo(np.int16).max
         audioToSave = audioOut*amplitude
         

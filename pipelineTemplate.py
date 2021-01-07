@@ -181,7 +181,7 @@ def processingPipeline(sourceFile,**kwargs):
             'saveIfSimilar' : True,  # save even if the are too similar to default strategy
             'differenceThreshold' : 1,
             'maxSimilarChannels' : 8,
-            'elGramFs' : parElectrodogram['outputFs'],  # this is linked to the previous electrodogram generation step, it should always match [55556 Hz]
+            'elGramFs' : parElectrodogram['outputFs'],  # this is linked to the previous electrodogram generation step, it should always match [55555.55 Hz]
             'outFile' : elecOutputFile            # This should be the full path including filename to a location where electrode matrix output will be saved after validation
             }
 
