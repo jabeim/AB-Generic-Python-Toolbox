@@ -174,7 +174,7 @@ def demo4_procedural():
     
     parValidate = {
             'parent' : parStrat,
-            'lengthTolerance' : 50, 
+            'lengthTolerance' : 0.005, # maximum allowable difference in length between electrodogram and validation data, as a proportion of len(validationData) [0.5% default] 
             'saveIfSimilar' : True,  # save even if the are too similar to default strategy
             'differenceThreshold' : 1,
             'maxSimilarChannels' : 8,

@@ -177,7 +177,7 @@ def processingPipeline(sourceFile,**kwargs):
     
     parValidate = {
             'parent' : parStrat,
-            'lengthTolerance' : 50, 
+            'lengthTolerance' : 0.005, 
             'saveIfSimilar' : True,  # save even if the are too similar to default strategy
             'differenceThreshold' : 1,
             'maxSimilarChannels' : 8,

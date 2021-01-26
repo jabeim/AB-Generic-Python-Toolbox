@@ -133,7 +133,7 @@ def validateOutputFunc(par,electrodogram,sourceFileName):
     if par['elGramFs']:
         assert np.round(par['elGramFs']) == 55556, 'Electrodogram must be generated with 55556 Hz rate'
         
-    assert validationData.shape[1]-electrodogram.shape[1] <= lengthTol, 'Electrodogram should have approximately '+f'{validationData.shape[1]}'+' columns. (+-'+f'{lengthTol}'+') Instead contains: '+'f{electrodogram.shape[0]}'
+    assert np.abs(validationData.shape[1]-electrodogram.shape[1]) <= np.floor(lengthTol*validationData.shape[1]), 'Electrodogram should have approximately '+f'{validationData.shape[1]}'+' columns. (+-'+f'{100*lengthTol}'+'%) Instead contains: '+f'{electrodogram.shape[1]}'
     
     
     # validate that electrode matrix is charge balanced in each channel
